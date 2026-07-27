@@ -52,7 +52,7 @@ class Email(Base):
     __tablename__ = "emails"
 
     gmail_message_id : Mapped[str]              = mapped_column(String(128), primary_key=True)
-    job_id           : Mapped[int | None]       = mapped_column(ForeignKey("jobs.id"), ondelete="CASCADE", nullable=True, index=True)
+    job_id           : Mapped[int | None]       = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=True, index=True)
 
     gmail_thread_id  : Mapped[str | None]       = mapped_column(String(128), nullable=True, index=True)
     account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount))
