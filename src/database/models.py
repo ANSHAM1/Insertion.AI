@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone
 
-from src.database.enums import (EmailAccount, EmploymentType, JobStatus, RecruitmentType, EventType, EventSource)
+from .enums import (EmailAccount, EmploymentType, JobStatus, RecruitmentType, EventType, EventSource)
 
 
 
