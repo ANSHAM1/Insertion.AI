@@ -112,7 +112,7 @@ class ScheduleItem(Base):
     __tablename__ = "schedule_items"
 
     id              : Mapped[int]             = mapped_column(primary_key=True)
-    schedule_id     : Mapped[int]             = mapped_column(ForeignKey("daily_schedules.schedule_date", ondelete="CASCADE"), index=True)
+    schedule_date   : Mapped[Date]            = mapped_column(ForeignKey("daily_schedules.schedule_date", ondelete="CASCADE"), index=True)
 
     title           : Mapped[str]             = mapped_column(String(150))
 
@@ -124,26 +124,7 @@ class ScheduleItem(Base):
 
     note            : Mapped[str | None]      = mapped_column(String(500), nullable=True)
 
-    schedule        : Mapped["DailySchedule"] = relationship(back_populates="schedule_items")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Schedule(Base):
-    __tablename__ = "schedules"
-
-    id : Mapped[int] = mapped_column(primary_key=True)
+    schedule        : Mapped["DailySchedule"] = relationship(back_populates="items")
 
 
 
