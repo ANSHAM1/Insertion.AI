@@ -73,3 +73,50 @@
         │ completed                                   │
         │ note                                        │
         └─────────────────────────────────────────────┘
+
+
+
+### AI planner
+
+                                   Gmail
+                                   │
+                                   ▼
+                              EMAIL AGENT
+                                   │
+                                   ▼
+                                   EMAILS
+                                   │
+                                   ▼
+                                   JOBS
+                                   │
+                                   ▼
+                                   EVENTS
+                                   │
+                                   │
+               ┌──────────────────────┼───────────────────────────┐
+               │                      │                           │
+               ▼                      ▼                           ▼
+          Today's Events      Yesterday's Schedule        Schedule Template
+                              + Completion Notes          + Planner Prompt
+               │                      │                           │
+               └──────────────────────┴───────────────┬───────────┘
+                                                       │
+                                                       ▼
+                                             ┌─────────────────┐
+                                             │   AI Planner    │
+                                             └─────────────────┘
+                                                       │
+                                                       ▼
+                                             DAILY_SCHEDULE
+                                                       │
+                                                       ▼
+                                             SCHEDULE_ITEMS
+                                                       │
+                                                       ▼
+                                   User Completion + Task Notes
+                                                       │
+                                                       │
+                                        (stored in database)
+                                                       │
+                                                       ▼
+                                        Used for tomorrow's planning
