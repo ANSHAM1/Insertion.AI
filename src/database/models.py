@@ -134,11 +134,6 @@ class ScheduleItem(Base):
 
 
 
-
-
-from src.database.connection import engine
-
-
-Base.metadata.create_all(engine)
-
-print("Database initialized successfully!")
+# from src.database.connection import engine
+# Base.metadata.create_all(engine)
+# print("Database initialized successfully!")
