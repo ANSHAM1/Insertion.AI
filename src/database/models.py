@@ -128,6 +128,24 @@ class ScheduleItem(Base):
 
 
 
+class ReadingArticle(Base):
+    __tablename__ = "reading_articles"
+
+    id           : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    title        : Mapped[str] = mapped_column(String(500), nullable=False)
+
+    url          : Mapped[str] = mapped_column(String(1000), unique=True, nullable=False)
+
+    source       : Mapped[str] = mapped_column(String(100), nullable=False)
+
+    published_at : Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    is_read      : Mapped[bool] = mapped_column(default=False)
+
+    created_at   : Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
 
 
 
