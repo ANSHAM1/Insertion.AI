@@ -1,55 +1,25 @@
-from __future__ import annotations
-
 from datetime import date
-from enum import Enum
-
 from pydantic import BaseModel, ConfigDict
-
-
-class EmploymentType(str, Enum):
-    FULL_TIME      = "full_time"
-    PART_TIME      = "part_time"
-    CONTRACT       = "contract"
-    INTERN         = "internship"
-    TEMPORARY      = "temporary"
-    FREELANCE      = "freelance"
-    APPRENTICESHIP = "apprenticeship"
-    VOLUNTEER      = "volunteer"
-    UNKNOWN        = "unknown"
-
 
 class JobClass(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
-    company         : str
-    role            : str
-    description     : str | None            = None
+    id               : str
 
-    employment_type : EmploymentType | None = None
+    company          : str
+    role             : str
 
-    location        : str | None            = None
+    description      : str 
+    category         : str 
 
-    salary          : str | None            = None
+    employment_type  : str
 
-    experience_min  : int | None            = None
+    location         : str
 
-    bond            : int | None            = None
+    salary_min       : float
+    salary_max       : float 
+    salary_predicted : bool 
 
-    apply_url       : str | None            = None
+    apply_url        : str 
 
-    recruiter_name  : str | None            = None
-    recruiter_email : str | None            = None
-
-    posted_at       : date | None           = None
-
-
-class JobSearchFilter(BaseModel):
-    keywords         : list[str]   = []
-
-    locations        : list[str]   = []
-
-    employment_types : list[str]   = []
-
-    posted_after     : date | None = None
-
-    limit            : int         = 16
+    posted_at        : date 

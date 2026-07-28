@@ -17,8 +17,6 @@ class Settings(BaseSettings):
     ADZUNA_APP_ID      : str = ""
     ADZUNA_APP_KEY     : str = ""
 
-    HIREBASE_API_KEY   : str = ""
-
     GMAIL_SECRETS_DIR  : Path = Path("secrets")
 
     SYNC_DATA_PATH    : Path = Path("data/app_states.json")

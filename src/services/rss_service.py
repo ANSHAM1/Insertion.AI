@@ -8,25 +8,30 @@ from src.fetcher.rss.rss_api import fetch_all
 from src.config.state_manager import StateManager
 
 
+class RssService:
 
-def generate_daily_article(state : StateManager, repo : RssRepository) -> ReadingArticle:
-        now = state.now()
-        last_sync = state.RSS_STATE()
+    def __init__(self, repository: RssRepository) -> None:
+        self.repo  = repository
+        self.state = StateManager()
 
-        if (last_sync and now - last_sync < state.time_delta(1)):
-            return ReadingArticle()
+    def generate_daily_article(self) -> None:
+        now = self.state.now()
+        last_sync = self.state.RSS_STATE()
+
+        if (last_sync and now - last_sync < self.state.time_delta(1)):
+            return
 
         parsed = fetch_all()
 
         urls = [str(article.url) for article in parsed]
 
-        existing_urls: set[str] = set(repo.get_existing_urls(urls))
+        existing_urls: set[str] = set(self.repo.get_existing_urls(urls))
 
         new_articles = [
             article
-            for article in parsed
-            if article.url not in existing_urls
-        ]
+                for article in parsed
+                if article.url not in existing_urls
+            ]
 
         if new_articles:
             selected = random.choice(new_articles)
@@ -38,13 +43,6 @@ def generate_daily_article(state : StateManager, repo : RssRepository) -> Readin
                 published_at = selected.published_at
             )
 
-            repo.add(row)
+            self.repo.add(row)
 
-            state.RSS_SYNC(now)
-
-            return row
-
-        row : ReadingArticle | None = repo.get_random_article()
-        if row:
-            return row
-        return ReadingArticle()
+        self.state.RSS_SYNC(now)
