@@ -1,7 +1,8 @@
 from sqlalchemy import and_, select, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
+from datetime import datetime, time, timedelta, date
 
-from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail
+from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail, Event, DailySchedule, ScheduleItem
 
 
 
@@ -113,7 +114,6 @@ class RssRepository:
         return self.db.get(ReadingArticle, article_id)
 
 
-
 class GmailRepository:
 
     def __init__(self, db: Session):
@@ -141,41 +141,24 @@ class GmailRepository:
     def get(self, id: int) -> Email | None:
         return self.db.get(Email, id)
 
-    def update(self, email: Email, updates: dict[str, object]) -> None:
-        valid_fields = Email.__table__.columns.keys()
-
-        for field, value in updates.items():
-            if field not in valid_fields:
-                continue
-
-            if value is None:
-                continue
-
-            setattr(email, field, value)
-
-        self.db.commit()
-        self.db.refresh(email)
-
-
-
 
 class FollowUpRepository:
 
     def __init__(self, db: Session):
         self.db = db
 
-    def find_duplicate_message(self, message_id : str, account : str) -> Email | None:
+    def find_duplicate_message(self, message_id : str, account : str) -> FollowUpEmail | None:
         return self.db.scalar(
-            select(Email).where(and_(
-                Email.gmail_message_id == message_id,
-                Email.account == account
+            select(FollowUpEmail).where(and_(
+                FollowUpEmail.gmail_message_id == message_id,
+                FollowUpEmail.account == account
             )))
 
-    def find_duplicate_thread(self, thread_id : str, account : str) -> Email | None:
+    def find_duplicate_thread(self, thread_id : str, account : str) -> FollowUpEmail | None:
         return self.db.scalar(
-            select(Email).where(and_(
-                Email.gmail_message_id == thread_id,
-                Email.account == account
+            select(FollowUpEmail).where(and_(
+                FollowUpEmail.gmail_message_id == thread_id,
+                FollowUpEmail.account == account
             )))
 
     def add(self, email: FollowUpEmail) -> bool:
@@ -193,8 +176,48 @@ class FollowUpRepository:
     def get(self, id: int) -> FollowUpEmail | None:
         return self.db.get(FollowUpEmail, id)
 
-    def update(self, email: FollowUpEmail, updates: dict[str, object]) -> None:
-        valid_fields = FollowUpEmail.__table__.columns.keys()
+
+class EventRepository:
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_events(self, date: date) -> list[Event] | None:
+        day_start = datetime.combine(date, time.min)
+        day_end = day_start + timedelta(days=1)
+
+        results = self.db.scalars(
+            select(Event).where(
+                Event.completed.is_(False),
+                Event.start_time < day_end,
+                Event.end_time >= day_start,
+            )
+        ).all()
+
+        return list(results) if results else None
+
+    def find_duplicate(self, id : int) -> Event | None:
+        return self.db.scalar(
+            select(Event).where(Event.id == id)
+            )
+
+    def add(self, event : Event) -> bool:
+        existing = self.find_duplicate(event.id)
+
+        if existing is not None:
+            return False
+        
+        self.db.add(event)
+        self.db.commit()
+        self.db.refresh(event)
+
+        return True
+
+    def get(self, id: int) -> Event | None:
+        return self.db.get(Event, id)
+
+    def update(self, event : Event, updates: dict[str, object]) -> None:
+        valid_fields = set(Event.__table__.columns.keys())
 
         for field, value in updates.items():
             if field not in valid_fields:
@@ -203,7 +226,60 @@ class FollowUpRepository:
             if value is None:
                 continue
 
-            setattr(email, field, value)
+            setattr(event, field, value)
 
         self.db.commit()
-        self.db.refresh(email)
+        self.db.refresh(event)
+
+
+class DailyScheduleRepository:
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_schedule(self, date: date) -> DailySchedule | None:
+        return self.db.scalar(
+            select(DailySchedule)
+            .options(selectinload(DailySchedule.items))
+            .where(DailySchedule.schedule_date == date)
+        )
+
+    def find_duplicate(self, date : date) -> DailySchedule | None:
+        return self.db.scalar(
+            select(DailySchedule).where(DailySchedule.schedule_date == date)
+            )
+
+    def add(self, schedule : DailySchedule, items : list[ScheduleItem]) -> bool:
+        existing = self.find_duplicate(schedule.schedule_date)
+
+        if existing is not None:
+            return False
+        
+        self.db.add(schedule)
+        self.db.add_all(items)
+
+        self.db.commit()
+
+        self.db.refresh(schedule)
+        for item in items:
+            self.db.refresh(item)
+
+        return True
+
+    def get(self, date : date) -> DailySchedule | None:
+        return self.db.get(DailySchedule, date)
+
+    def update_item(self, scheduleitem : ScheduleItem, updates: dict[str, object]) -> None:
+        valid_fields = set(ScheduleItem.__table__.columns.keys())
+
+        for field, value in updates.items():
+            if field not in valid_fields:
+                continue
+
+            if value is None:
+                continue
+
+            setattr(scheduleitem, field, value)
+
+        self.db.commit()
+        self.db.refresh(scheduleitem)

@@ -45,6 +45,7 @@ class Job(Base):
                                                                         onupdate=lambda: datetime.now(timezone.utc))
 
 
+
 class JobColledge(Base):
     __tablename__ = "jobs_colledge"
 
@@ -72,6 +73,7 @@ class JobColledge(Base):
     updated_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
                                                                         onupdate=lambda: datetime.now(timezone.utc))
 
+
 class Email(Base):
     __tablename__ = "emails"
 
@@ -93,6 +95,7 @@ class Email(Base):
     job_colledge_id  : Mapped[int | None]       = mapped_column(nullable=True)
     
     created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
 
 
 class FollowUpEmail(Base):
@@ -118,11 +121,11 @@ class FollowUpEmail(Base):
     created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
+
 class Event(Base):
     __tablename__ = "events"
 
     id            : Mapped[int]             = mapped_column(primary_key=True)
-    job_id        : Mapped[int | None]      = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), nullable=True, index=True)
 
     title         : Mapped[str]             = mapped_column(String(250))
     description   : Mapped[str | None]      = mapped_column(String(1000), nullable=True)
@@ -136,10 +139,9 @@ class Event(Base):
 
     source        : Mapped[EventSource]     = mapped_column(SqlEnum(EventSource))
 
-    job           : Mapped["Job | None"]    = relationship(back_populates="events")
-
     created_at    : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at    : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
 
 
 class DailySchedule(Base):
@@ -152,6 +154,7 @@ class DailySchedule(Base):
     items           : Mapped[list["ScheduleItem"]] = relationship(back_populates="schedule", cascade="all, delete-orphan")
 
     generated_at    : Mapped[datetime]             = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
 
 
 class ScheduleItem(Base):
@@ -190,6 +193,7 @@ class ReadingArticle(Base):
     is_read      : Mapped[bool]            = mapped_column(default=False)
 
     created_at   : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
 
 
 class JobLookup(Base):
