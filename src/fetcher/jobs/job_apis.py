@@ -2,178 +2,217 @@ from __future__ import annotations
 
 import httpx
 from typing import Any
+from datetime import datetime
 
-
+from .models import Job, JobSearchFilter, EmploymentType
 from .base import JobProvider
-from .companies import GREENHOUSE_COMPANIES, LEVER_COMPANIES
-from .models import (EmploymentType, JobPosting, JobProvider as Provider, JobSearchQuery)
 
 
-class GreenhouseProvider(JobProvider):
-    name = "greenhouse"
+class AdzunaProvider(JobProvider):
+    BASE_URL = "https://api.adzuna.com/v1/api/jobs"
 
-    BASE_URL = "https://boards-api.greenhouse.io/v1/boards"
+    def __init__(self, app_id: str, app_key: str, country: str = "in", timeout: float = 30.0) -> None:
+        self._app_id  = app_id
+        self._app_key = app_key
+        self._country = country
 
-
-    def _fetch_company_jobs(self, company: str) -> list[dict[str, Any]]:
-        url = f"{self.BASE_URL}/{company}/jobs"
-
-        response = httpx.get(
-            url,
-            timeout=20,
-        )
-
-        if response.status_code != 200:
-            return []
-
-        return response.json().get("jobs", [])
-
-
-    def _parse(self, company: str, job: dict[str, Any]) -> JobPosting:
-        location = ""
-
-        if job.get("location"):
-            location = job["location"].get("name", "")
-
-        return JobPosting(
-            provider        = Provider.GREENHOUSE,
-            external_id     = str(job["id"]),
-            company         = company,
-            role            = job["title"],
-            location        = location,
-            employment_type = EmploymentType.UNKNOWN,
-            remote          = "remote" in location.lower(),
-            description     = "",
-            apply_url       = job["absolute_url"],
-            posted_at       = None
-        )
-
-
-    def search(self, query: JobSearchQuery) -> list[JobPosting]:
-        jobs: list[JobPosting] = []
-
-        keywords  = [k.lower() for k in query.keywords]
-        locations = [l.lower() for l in query.locations]
-
-        for company in GREENHOUSE_COMPANIES:
-            raw_jobs = self._fetch_company_jobs(company)
-
-            for raw in raw_jobs:
-                title = raw["title"].lower()
-
-                location = ""
-                if raw.get("location"):
-                    location = raw["location"].get("name", "").lower()
-
-                # Keyword filter
-                if keywords and not any(k in title for k in keywords):
-                    continue
-
-                # Location filter
-                if locations:
-                    if not any(loc in location for loc in locations):
-                        continue
-
-                jobs.append(self._parse(company, raw))
-
-        return jobs[: query.limit]
-
-
-
-class LeverProvider(JobProvider):
-    name = "lever"
-
-    BASE_URL = "https://api.lever.co/v0/postings"
-
-
-    def _fetch_company_jobs(self, company: str) -> list[dict[str, Any]]:
-        url = f"{self.BASE_URL}/{company}"
-
-        response = httpx.get(
-            url,
-            params={
-                "mode": "json",
+        self._client = httpx.Client(
+            base_url=self.BASE_URL,
+            timeout=timeout,
+            headers={
+                "Accept": "application/json",
             },
-            timeout=20,
         )
 
-        if response.status_code != 200:
-            return []
+    def search_jobs(self, filters: JobSearchFilter) -> list[Job]:
 
-        return response.json()
+        response = self._client.get(f"/{self._country}/search/1", params=self._build_params(filters))
+
+        response.raise_for_status()
+
+        payload = response.json()
+
+        jobs: list[Job] = []
+
+        for item in payload.get("results", []):
+
+            salary = None
+            salary_min = item.get("salary_min")
+            salary_max = item.get("salary_max")
+
+            if salary_min and salary_max:
+                salary = f"{salary_min:,} - {salary_max:,}"
+            elif salary_min:
+                salary = f"From {salary_min:,}"
+            elif salary_max:
+                salary = f"Up to {salary_max:,}"
+
+            contract = item.get("contract_type")
+
+            employment_type = None
+            if contract == "permanent":
+                employment_type = EmploymentType.FULL_TIME
+            elif contract == "contract":
+                employment_type = EmploymentType.CONTRACT
+
+            jobs.append(
+                Job(
+                    company         = item.get("company", {}).get("display_name", "").strip(),
+                    role            = item.get("title", "").strip(),
+                    description     = item.get("description"),
+                    employment_type = employment_type,
+                    location        = item.get("location", {}).get("display_name"),
+                    salary          = salary,
+                    apply_url       = item.get("redirect_url"),
+                    posted_at       = datetime.fromisoformat(item["created"].replace("Z", "+00:00")).date(),
+                )
+            )
+
+        return jobs
+
+    def _build_params(self, filters: JobSearchFilter) -> dict[str, Any]:
+        """
+        Convert JobSearchFilter into Adzuna query parameters.
+        """
+        params: dict[str, Any] = {
+            "app_id": self._app_id,
+            "app_key": self._app_key,
+            "results_per_page": filters.limit,
+        }
+
+        if filters.keywords:
+            params["what"] = " OR ".join(filters.keywords)
+
+        if filters.locations:
+            params["where"] = ", ".join(filters.locations)
+
+        if filters.posted_after:
+            params["max_days_old"] = (
+                (filters.posted_after.today() - filters.posted_after).days
+            )
+
+        if filters.employment_types:
+            pass
+
+        return params
 
 
-    def _employment_type(self, text: str | None) -> EmploymentType:
-        if not text:
-            return EmploymentType.UNKNOWN
+class HirebaseProvider(JobProvider):
+    BASE_URL = "https://api.hirebase.org/v2"
 
-        text = text.lower()
-
-        if "full" in text:
-            return EmploymentType.FULL_TIME
-
-        if "part" in text:
-            return EmploymentType.PART_TIME
-
-        if "intern" in text:
-            return EmploymentType.INTERN
-
-        if "contract" in text:
-            return EmploymentType.CONTRACT
-
-        if "temp" in text:
-            return EmploymentType.TEMPORARY
-
-        return EmploymentType.UNKNOWN
-
-
-    def _parse(self, company: str, job: dict[str, Any]) -> JobPosting:
-        categories = job.get("categories", {})
-
-        location   = categories.get("location", "")
-        commitment = categories.get("commitment")
-
-        return JobPosting(
-            provider        = Provider.LEVER,
-            external_id     = job["id"],
-            company         = company,
-            role            = job["text"],
-            location        = location,
-            employment_type = self._employment_type(commitment),
-            remote          = "remote" in location.lower(),
-            description     = job.get("descriptionPlain", ""),
-            apply_url       = job["hostedUrl"],
-            posted_at       = None,
+    def __init__(self, api_key: str, timeout: float = 30.0) -> None:
+        self._client = httpx.Client(
+            base_url=self.BASE_URL,
+            timeout=timeout,
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": api_key,
+            },
         )
 
+    def search_jobs(self, filters: JobSearchFilter) -> list[Job]:
 
-    def search(self, query: JobSearchQuery) -> list[JobPosting]:
-        jobs: list[JobPosting] = []
+        response = self._client.post("/jobs/search", json=self._build_body(filters))
 
-        # keywords  = [k.lower() for k in query.keywords]
-        # locations = [l.lower() for l in query.locations]
+        response.raise_for_status()
 
-        for company in LEVER_COMPANIES:
-            raw_jobs = self._fetch_company_jobs(company)
+        payload = response.json()
 
-            print(company, len(raw_jobs))
+        jobs: list[Job] = []
 
-            for raw in raw_jobs:
-                # title = raw["text"].lower()
+        for item in payload.get("jobs", []):
 
-                # location = (raw.get("categories", {}).get("location", "").lower())
-                # if keywords:
-                #     if not any(keyword in title for keyword in keywords):
-                #         continue
+            salary = None
+            salary_range: dict[str, Any] = item.get("salary_range") or {}
 
-                # if locations:
-                #     if not any(loc in location for loc in locations):
-                #         continue
+            salary_min = salary_range.get("min")
+            salary_max = salary_range.get("max")
 
-                # if query.remote_only:
-                #     if "remote" not in location:
-                #         continue
+            if salary_min and salary_max:
+                salary = f"{salary_min:,} - {salary_max:,}"
+            elif salary_min:
+                salary = f"From {salary_min:,}"
+            elif salary_max:
+                salary = f"Up to {salary_max:,}"
 
-                jobs.append(self._parse(company, raw))
+            employment_type = self._map_employment_type(
+                item.get("job_type")
+            )
 
-        return jobs[: query.limit]
+            locations: list[Any] = item.get("locations") or []
+
+            location = None
+            if locations:
+                loc = locations[0]
+                location = ", ".join(
+                    filter(
+                        None,
+                        [
+                            loc.get("city"),
+                            loc.get("region"),
+                            loc.get("country"),
+                        ],
+                    )
+                )
+
+            experience: dict[str, Any] = item.get("yoe_range") or {}
+
+            posted_at = None
+            if item.get("date_posted"):
+                posted_at = datetime.fromisoformat(
+                    item["date_posted"].replace("Z", "+00:00")
+                ).date()
+
+            jobs.append(
+                Job(
+                    company         = item.get("company_name", "").strip(),
+                    role            = item.get("job_title", "").strip(),
+                    description     = item.get("description"),
+                    employment_type = employment_type,
+                    location        = location,
+                    salary          = salary,
+                    experience_min  = experience.get("min"),
+                    apply_url       = item.get("application_link"),
+                    posted_at       = posted_at,
+                )
+            )
+
+        return jobs
+
+    def _build_body(self, filters: JobSearchFilter) -> dict[str, Any]:
+
+        body: dict[str, Any] = {
+            "page": 1,
+            "limit": filters.limit,
+            "sort_by": "date_posted",
+            "sort_order": "desc",
+        }
+
+        if filters.keywords:
+            body["job_titles"] = filters.keywords
+
+        if filters.posted_after:
+            body["days_ago"] = (
+                datetime.now().date() - filters.posted_after
+            ).days
+
+        return body
+
+    @staticmethod
+    def _map_employment_type(job_type: str | None) -> EmploymentType | None:
+
+        if not job_type:
+            return None
+
+        mapping = {
+            "Full Time": EmploymentType.FULL_TIME,
+            "Part Time": EmploymentType.PART_TIME,
+            "Contract": EmploymentType.CONTRACT,
+            "Internship": EmploymentType.INTERN,
+            "Temporary": EmploymentType.TEMPORARY,
+            "Freelance": EmploymentType.FREELANCE,
+            "Volunteer": EmploymentType.VOLUNTEER,
+            "Apprenticeship": EmploymentType.APPRENTICESHIP,
+        }
+
+        return mapping.get(job_type)

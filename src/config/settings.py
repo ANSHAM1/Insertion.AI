@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY : str = ""
     NVIDIA_API_KEY     : str = ""
 
+    ADZUNA_APP_ID      : str = ""
+    ADZUNA_APP_KEY     : str = ""
+
+    HIREBASE_API_KEY   : str = ""
+
     GMAIL_SECRETS_DIR  : Path = Path("secrets")
 
     GMAIL_SYNC_DATA    : Path = Path("data/app_states")

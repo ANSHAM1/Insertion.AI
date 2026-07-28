@@ -1,20 +1,15 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 
-from .models import JobPosting, JobSearchQuery
-
+from .models import Job, JobSearchFilter
 
 
 class JobProvider(ABC):
-    """
-    Base class for all job providers.
-    """
-
-    name: str
+    """Base interface for all job providers."""
 
     @abstractmethod
-    def search(self, query: JobSearchQuery) -> list[JobPosting]:
+    def search_jobs(self, filters: JobSearchFilter) -> list[Job]:
         """
-        Search jobs matching the given query.
+        Search jobs using the provider and return normalized Job models.
         """
         raise NotImplementedError

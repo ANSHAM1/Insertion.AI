@@ -1,68 +1,55 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
-
-
-class JobProvider(str, Enum):
-    GREENHOUSE = "greenhouse"
-    LEVER = "lever"
-    ASHBY = "ashby"
-    SMART_RECRUITERS = "smartrecruiters"
-    WORKDAY = "workday"
 
 class EmploymentType(str, Enum):
-    FULL_TIME = "full_time"
-    PART_TIME = "part_time"
-    CONTRACT = "contract"
-    INTERN = "intern"
-    TEMPORARY = "temporary"
-    UNKNOWN = "unknown"
+    FULL_TIME      = "full_time"
+    PART_TIME      = "part_time"
+    CONTRACT       = "contract"
+    INTERN         = "internship"
+    TEMPORARY      = "temporary"
+    FREELANCE      = "freelance"
+    APPRENTICESHIP = "apprenticeship"
+    VOLUNTEER      = "volunteer"
+    UNKNOWN        = "unknown"
 
 
-
-
-class JobSearchQuery(BaseModel):
-    """
-    Common search query accepted by every provider.
-    """
-    keywords         : list[str]            = Field(default_factory=list)
-
-    locations        : list[str]            = Field(default_factory=list)
-
-    remote_only      : bool                 = False
-
-    worldwide        : bool                 = False
-
-    employment_types : list[EmploymentType] = Field(default_factory=list) # type: ignore
-    
-    limit            : int                  = 50
-
-
-
-class JobPosting(BaseModel):
-    """
-    Normalized job posting returned by every provider.
-    """
-    provider        : JobProvider
-
-    external_id     : str
+class Job(BaseModel):
+    model_config = ConfigDict(extra="ignore")
 
     company         : str
-
     role            : str
+    description     : str | None            = None
 
-    location        : str | None      = None
+    employment_type : EmploymentType | None = None
 
-    employment_type : EmploymentType  = EmploymentType.UNKNOWN
+    location        : str | None            = None
 
-    remote          : bool            = False
+    salary          : str | None            = None
 
-    description     : str             = ""
+    experience_min  : int | None            = None
 
-    apply_url       : str
+    bond            : int | None            = None
 
-    posted_at       : datetime | None = None
+    apply_url       : str | None            = None
+
+    recruiter_name  : str | None            = None
+    recruiter_email : str | None            = None
+
+    posted_at       : date | None           = None
+
+
+class JobSearchFilter(BaseModel):
+    keywords         : list[str]   = []
+
+    locations        : list[str]   = []
+
+    employment_types : list[str]   = []
+
+    posted_after     : date | None = None
+
+    limit            : int         = 16

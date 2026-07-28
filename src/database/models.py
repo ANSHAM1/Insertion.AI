@@ -1,4 +1,4 @@
-from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey)
+from sqlalchemy import (Index, Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text, text)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone
@@ -14,38 +14,43 @@ class Base(DeclarativeBase):
 class Job(Base):
     __tablename__ = "jobs"
 
-    id                 : Mapped[int]             = mapped_column(primary_key=True)
+    __table_args__ = (
+        Index("uq_apply_url", "apply_url", unique=True, mssql_where=text("apply_url IS NOT NULL")),
+        Index("idx_company_role_location", "company", "role", "location")
+    )
 
-    company            : Mapped[str]             = mapped_column(String(200), index=True)
-    summary            : Mapped[str | None]      = mapped_column(String(300), nullable=True)
-    role               : Mapped[str | None]      = mapped_column(String(200), nullable=True)
-    employment_type    : Mapped[EmploymentType]  = mapped_column(SqlEnum(EmploymentType))
+    id                 : Mapped[int]                    = mapped_column(primary_key=True)
 
-    recruitment_type   : Mapped[RecruitmentType] = mapped_column(SqlEnum(RecruitmentType))
+    company            : Mapped[str]                    = mapped_column(String(200), index=True)
+    description        : Mapped[str | None]             = mapped_column(Text, nullable=True)
+    role               : Mapped[str]                    = mapped_column(String(200), index=True)
+    employment_type    : Mapped[EmploymentType | None]  = mapped_column(SqlEnum(EmploymentType), nullable=True)
+
+    recruitment_type   : Mapped[RecruitmentType | None] = mapped_column(SqlEnum(RecruitmentType), nullable=True)
     
-    location           : Mapped[str | None]      = mapped_column(String(150), nullable=True)
-    salary             : Mapped[str | None]      = mapped_column(String(100), nullable=True)
-    bond               : Mapped[int | None]      = mapped_column(nullable=True)
-    job_url            : Mapped[str | None]      = mapped_column(String(600), nullable=True)
-    experience_min     : Mapped[int | None]      = mapped_column(nullable=True)
+    location           : Mapped[str | None]             = mapped_column(String(150), nullable=True)
+    salary             : Mapped[str | None]             = mapped_column(String(100), nullable=True)
+    bond               : Mapped[int | None]             = mapped_column(nullable=True)
+    apply_url          : Mapped[str | None]             = mapped_column(String(600), nullable=True)
+    experience_min     : Mapped[int | None]             = mapped_column(nullable=True)
 
-    recruiter_name     : Mapped[str | None]      = mapped_column(String(150), nullable=True)
-    recruiter_email    : Mapped[str | None]      = mapped_column(String(200), nullable=True, index=True)
+    recruiter_name     : Mapped[str | None]             = mapped_column(String(150), nullable=True)
+    recruiter_email    : Mapped[str | None]             = mapped_column(String(200), nullable=True, index=True)
 
-    applied_at         : Mapped[date | None]     = mapped_column(Date, nullable=True)
-    status             : Mapped[JobStatus]       = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
-    status_date        : Mapped[date]            = mapped_column(Date, default=date.today)
-    next_event_date    : Mapped[date | None]     = mapped_column(Date, nullable=True, index=True)
+    applied_at         : Mapped[date | None]            = mapped_column(Date, nullable=True)
+    status             : Mapped[JobStatus]              = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
+    status_date        : Mapped[date]                   = mapped_column(Date, default=lambda: datetime.now(timezone.utc).date())
+    next_event_date    : Mapped[date | None]            = mapped_column(Date, nullable=True, index=True)
 
-    resume_tailored    : Mapped[bool]            = mapped_column(Boolean, default=False)
-    resume_path        : Mapped[str | None]      = mapped_column(String(400), nullable=True)
+    resume_tailored    : Mapped[bool]                   = mapped_column(Boolean, default=False)
+    resume_path        : Mapped[str | None]             = mapped_column(String(400), nullable=True)
 
-    emails             : Mapped[list["Email"]]   = relationship(back_populates="job", cascade="all, delete-orphan")
-    events             : Mapped[list["Event"]]   = relationship(back_populates="job", cascade="all, delete-orphan")
+    emails             : Mapped[list["Email"]]          = relationship(back_populates="job", cascade="all, delete-orphan")
+    events             : Mapped[list["Event"]]          = relationship(back_populates="job", cascade="all, delete-orphan")
 
-    created_at         : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at         : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
-                                                                 onupdate=lambda: datetime.now(timezone.utc))
+    created_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
+                                                                        onupdate=lambda: datetime.now(timezone.utc))
 
 
 class Email(Base):
