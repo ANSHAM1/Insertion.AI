@@ -18,7 +18,7 @@ class RssService:
         now = self.state.now()
         last_sync = self.state.RSS_STATE()
 
-        if (last_sync and now - last_sync < self.state.time_delta(1)):
+        if (last_sync and now - last_sync < self.state.time_delta(24)):
             return
 
         parsed = fetch_all()

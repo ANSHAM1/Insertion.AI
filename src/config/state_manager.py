@@ -30,6 +30,7 @@ class StateManager:
         state["rss"]["last_sync"] = now
 
 
+
     def JOB_STATE(self) -> datetime:
         with open(self.SYNC_PATH, "r", encoding="utf-8") as f:
             state = json.load(f)
@@ -41,3 +42,17 @@ class StateManager:
             state = json.load(f)
 
         state["job"]["adzuna_last_sync"] = now
+
+
+
+    def MAIL_STATE(self, account : str) -> datetime:
+        with open(self.SYNC_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+
+        return state["gmail"][account]["last_sync"]
+
+    def MAIL_SYNC(self, account : str, now : datetime = now()) -> None:
+        with open(self.SYNC_PATH, "r", encoding="utf-8") as f:
+            state = json.load(f)
+
+        state["gmail"][account]["last_sync"] = now

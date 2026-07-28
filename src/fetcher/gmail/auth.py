@@ -22,30 +22,6 @@ def get_token_path(account: str) -> Path:
 
 
 def get_credentials(account: str) -> Credentials:
-    """
-    Authenticate a Gmail account.
-
-    Parameters
-    ----------
-    account : str
-        Folder name inside the secrets directory.
-
-        Example:
-            "college"
-            "personal_main"
-            "personal_alt"
-
-    Folder structure
-    ----------------
-    secrets/
-        college/
-            client_secret.json
-            token.json
-
-        personal_main/
-            client_secret.json
-            token.json
-    """
 
     client_secret_path = get_client_secret_path(account)
     token_path = get_token_path(account)

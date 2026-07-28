@@ -7,11 +7,8 @@ class JobClass(BaseModel):
     id               : str
 
     company          : str
-    role             : str
-
-    description      : str 
-    category         : str 
-
+    description      : str
+    role             : str 
     employment_type  : str
 
     location         : str

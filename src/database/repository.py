@@ -1,7 +1,7 @@
-from sqlalchemy import and_, select, func
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from src.database.models import Job, ReadingArticle
+from src.database.models import Job, JobLookup, ReadingArticle, Email
 
 
 
@@ -11,15 +11,12 @@ class JobRepository:
         self.db = db
 
     def add(self, job: Job) -> bool:
-        existing = self.find_duplicate(job)
-
-        if existing:
+        if self.exists(job.id):
             return False
 
         self.db.add(job)
         self.db.commit()
         self.db.refresh(job)
-
         return True
 
     def get(self, job_id: int) -> Job | None:
@@ -34,25 +31,7 @@ class JobRepository:
         
         return False
 
-    def find_duplicate(self, job: Job) -> Job | None:
-        if job.apply_url:
-            existing = self.db.scalar(
-                select(Job).where(Job.apply_url == job.apply_url)
-            )
-            if existing:
-                return existing
-
-        return self.db.scalar(
-            select(Job).where(
-                and_(
-                    Job.company == job.company,
-                    Job.role == job.role,
-                    Job.location == job.location,
-                )
-            )
-        )
-
-    def update(self, job: Job, updates: dict[str, object]) -> Job:
+    def update(self, job: Job, updates: dict[str, object]) -> None:
         valid_fields = Job.__table__.columns.keys()
 
         for field, value in updates.items():
@@ -67,8 +46,27 @@ class JobRepository:
         self.db.commit()
         self.db.refresh(job)
 
-        return job
+    def exists(self, job_id: str) -> bool:
+        return self.db.scalar(
+            select(JobLookup).where(JobLookup.id == job_id)
+            ) is not None
 
+    def bulk_exists(self, job_ids: list[str]) -> list[str]:
+        if not job_ids:
+            return []
+
+        rows = self.db.execute(
+            select(JobLookup.id).where(JobLookup.id.in_(job_ids))
+        ).scalars()
+
+        return list(rows)
+
+    def bulk_insert(self, job_ids: list[str]) -> None:
+        if not job_ids:
+            return
+
+        self.db.add_all(JobLookup(id=job_id) for job_id in job_ids)
+        self.db.commit()
 
 
 class RssRepository:
@@ -112,7 +110,48 @@ class RssRepository:
         return True
 
     def get(self, article_id: int) -> ReadingArticle | None:
-        return self.db.get(
-            ReadingArticle,
-            article_id,
+        return self.db.get(ReadingArticle, article_id)
+
+
+
+class GmailRepository:
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def find_duplicate(self, id : str) -> Email | None:
+        return self.db.scalar(
+            select(Email).where(
+                Email.gmail_message_id == id
+            )
         )
+
+    def add(self, email: Email) -> bool:
+        existing = self.find_duplicate(email.gmail_message_id)
+
+        if existing is not None:
+            return False
+        
+        self.db.add(email)
+        self.db.commit()
+        self.db.refresh(email)
+
+        return True
+
+    def get(self, id: int) -> Email | None:
+        return self.db.get(Email, id)
+
+    def update(self, email: Email, updates: dict[str, object]) -> None:
+        valid_fields = Email.__table__.columns.keys()
+
+        for field, value in updates.items():
+            if field not in valid_fields:
+                continue
+
+            if value is None:
+                continue
+
+            setattr(email, field, value)
+
+        self.db.commit()
+        self.db.refresh(email)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# from src.database.models import Job
+from src.database.models import Job
 from src.database.repository import JobRepository
 
 from src.fetcher.job.models import JobClass
@@ -13,8 +13,8 @@ from src.config.state_manager import StateManager
 class JobService:
 
     def __init__(self, repository: JobRepository) -> None:
-        self._repo   = repository
-        self._adzuna = AdzunaProvider()
+        self.repo   = repository
+        self.adzuna = AdzunaProvider()
 
         self.state   = StateManager() 
 
@@ -26,11 +26,24 @@ class JobService:
             return []
 
         if last_sync == None:
-            jobs = self._adzuna.search_jobs(max_days_old=7, limit=10)
+            jobs = self.adzuna.search_jobs(max_days_old=7, limit=20)
         else:
-            max_days_old = max(1, (now - last_sync).days)
-            jobs = self._adzuna.search_jobs(max_days_old=max_days_old, limit=10)
+            max_days_old = max(1, min((now - last_sync).days, 5))
+            jobs = self.adzuna.search_jobs(max_days_old=max_days_old, limit=20)
 
         self.state.JOB_SYNC(now)
 
-        return jobs
+        return self.remove_known_jobs_and_bulk_insert(jobs)
+
+    def remove_known_jobs_and_bulk_insert(self, jobs: list[JobClass]) -> list[JobClass]:
+        existing = self.repo.bulk_exists(
+            [job.id for job in jobs]
+        )
+
+        self.repo.bulk_insert(existing)
+
+        return [job for job in jobs if job.id not in existing]
+
+    def store_jobs(self, jobs: list[Job]) -> None:
+        for job in jobs:
+            self.repo.add(job)
