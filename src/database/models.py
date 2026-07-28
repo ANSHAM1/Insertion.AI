@@ -76,9 +76,9 @@ class Email(Base):
     __tablename__ = "emails"
 
     gmail_message_id : Mapped[str]              = mapped_column(String(128), primary_key=True)
+    account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount), primary_key=True)
 
-    gmail_thread_id  : Mapped[str | None]       = mapped_column(String(128), nullable=True, index=True)
-    account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount))
+    gmail_thread_id  : Mapped[str]              = mapped_column(String(128), index=True)
 
     detected_status  : Mapped[JobStatus | None] = mapped_column(SqlEnum(JobStatus), nullable=True, index=True)
 
@@ -99,9 +99,9 @@ class FollowUpEmail(Base):
     __tablename__ = "follow_up_emails"
 
     gmail_message_id : Mapped[str]              = mapped_column(String(128), primary_key=True)
+    account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount), primary_key=True)
 
-    gmail_thread_id  : Mapped[str | None]       = mapped_column(String(128), nullable=True, index=True)
-    account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount))
+    gmail_thread_id  : Mapped[str]              = mapped_column(String(128), index=True)
 
     detected_status  : Mapped[JobStatus | None] = mapped_column(SqlEnum(JobStatus), nullable=True, index=True)
 

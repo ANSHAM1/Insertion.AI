@@ -1,5 +1,5 @@
-from src.database.repository import GmailRepository
-from src.database.models import Email
+from src.database.repository import GmailRepository, FollowUpRepository
+from src.database.models import Email, FollowUpEmail
 
 from src.fetcher.gmail.gmail_api import GmailAPI
 from src.fetcher.gmail.models import ParsedEmail
@@ -11,10 +11,13 @@ from datetime import datetime
 
 class GmailService:
 
-    def __init__(self, repository: GmailRepository, account : str) -> None:
+    def __init__(self, repository: GmailRepository,follow_up : FollowUpRepository, account : str) -> None:
         self.gmail = GmailAPI(account)
-        self.repo = repository
         self.state = StateManager()
+
+        self.repo           = repository
+        self.repo_follow_up = follow_up
+
         self.account = account
 
     def fetch_emails(self) -> list[ParsedEmail]:
@@ -83,6 +86,9 @@ class GmailService:
 
         return emails
 
-    def store_emails(self, emails: list[Email]) -> None:
+    def store_emails(self, emails: list[Email], follow_up : list[FollowUpEmail]) -> None:
         for email in emails:
             self.repo.add(email)
+
+        for email in follow_up:
+            self.repo_follow_up.add(email)

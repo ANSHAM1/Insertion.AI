@@ -1,7 +1,7 @@
-from sqlalchemy import select, func
+from sqlalchemy import and_, select, func
 from sqlalchemy.orm import Session
 
-from src.database.models import Job, JobLookup, ReadingArticle, Email
+from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail
 
 
 
@@ -119,15 +119,15 @@ class GmailRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def find_duplicate(self, id : str) -> Email | None:
+    def find_duplicate(self, id : str, account : str) -> Email | None:
         return self.db.scalar(
-            select(Email).where(
-                Email.gmail_message_id == id
-            )
-        )
+            select(Email).where(and_(
+                Email.gmail_message_id == id,
+                Email.account == account
+            )))
 
     def add(self, email: Email) -> bool:
-        existing = self.find_duplicate(email.gmail_message_id)
+        existing = self.find_duplicate(email.gmail_message_id, email.account)
 
         if existing is not None:
             return False
@@ -143,6 +143,58 @@ class GmailRepository:
 
     def update(self, email: Email, updates: dict[str, object]) -> None:
         valid_fields = Email.__table__.columns.keys()
+
+        for field, value in updates.items():
+            if field not in valid_fields:
+                continue
+
+            if value is None:
+                continue
+
+            setattr(email, field, value)
+
+        self.db.commit()
+        self.db.refresh(email)
+
+
+
+
+class FollowUpRepository:
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def find_duplicate_message(self, message_id : str, account : str) -> Email | None:
+        return self.db.scalar(
+            select(Email).where(and_(
+                Email.gmail_message_id == message_id,
+                Email.account == account
+            )))
+
+    def find_duplicate_thread(self, thread_id : str, account : str) -> Email | None:
+        return self.db.scalar(
+            select(Email).where(and_(
+                Email.gmail_message_id == thread_id,
+                Email.account == account
+            )))
+
+    def add(self, email: FollowUpEmail) -> bool:
+        existing = self.find_duplicate_message(email.gmail_message_id, email.account)
+
+        if existing is not None:
+            return False
+        
+        self.db.add(email)
+        self.db.commit()
+        self.db.refresh(email)
+
+        return True
+
+    def get(self, id: int) -> FollowUpEmail | None:
+        return self.db.get(FollowUpEmail, id)
+
+    def update(self, email: FollowUpEmail, updates: dict[str, object]) -> None:
+        valid_fields = FollowUpEmail.__table__.columns.keys()
 
         for field, value in updates.items():
             if field not in valid_fields:
