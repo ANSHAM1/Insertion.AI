@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     GMAIL_SECRETS_DIR  : Path = Path("secrets")
 
-    SYNC_DATA    : Path = Path("data/app_states")
+    SYNC_DATA_PATH    : Path = Path("data/app_states.json")
 
     LOG_LEVEL          : str = "INFO"
 

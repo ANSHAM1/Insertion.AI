@@ -1,14 +1,8 @@
-from __future__ import annotations
-
 from datetime import datetime
 from pydantic import BaseModel, Field, HttpUrl
 
 
-
 class RSSFeed(BaseModel):
-    """
-    Configuration for an RSS feed.
-    """
     name     : str
 
     url      : HttpUrl
@@ -21,26 +15,11 @@ class RSSFeed(BaseModel):
 
 
 
-class ParsedArticle(BaseModel):
-    """
-    Normalized article returned by every RSS feed.
-    """
-    feed_name    : str
-
+class ReadingArticleClass(BaseModel):
     title        : str
 
     url          : HttpUrl
 
-    guid         : str
-
-    author       : str | None      = None
+    source       : str
 
     published_at : datetime | None = None
-
-    summary      : str = ""
-
-    content      : str = ""
-
-    categories   : list[str]       = Field(default_factory=list)
-
-    tags         : list[str]       = Field(default_factory=list)

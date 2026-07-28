@@ -18,7 +18,7 @@ class EmploymentType(str, Enum):
     UNKNOWN        = "unknown"
 
 
-class Job(BaseModel):
+class JobClass(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     company         : str

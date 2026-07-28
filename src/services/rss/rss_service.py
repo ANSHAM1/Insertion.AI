@@ -1,62 +1,50 @@
-from __future__ import annotations
-
 import random
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from src.database.models import ReadingArticle
+from src.database.repository import RssRepository
 
-from src.fetcher.rss.feeds import RSS_FEEDS
-from src.fetcher.rss.models import ParsedArticle
-from src.fetcher.rss.parser import parse_article
-from src.fetcher.rss.rss_api import RSSAPI
+from src.fetcher.rss.rss_api import fetch_all
+
+from src.config.state_manager import StateManager
 
 
 
-class RSSService:
+def generate_daily_article(state : StateManager, repo : RssRepository) -> ReadingArticle:
+        now = state.now()
+        last_sync = state.RSS_STATE()
 
-    def __init__(self, db: Session):
-        self.db = db
-        self.api = RSSAPI()
+        if (last_sync and now - last_sync < state.time_delta(1)):
+            return ReadingArticle()
 
-    def generate_daily_article(self) -> ReadingArticle | None:
-        candidates: list[ParsedArticle] = []
+        parsed = fetch_all()
 
-        for feed in RSS_FEEDS:
-            if not feed.enabled:
-                continue
+        urls = [str(article.url) for article in parsed]
 
-            entries = self.api.fetch(feed)
+        existing_urls: set[str] = set(repo.get_existing_urls(urls))
 
-            for entry in entries:
-                article = parse_article(feed, entry)
+        new_articles = [
+            article
+            for article in parsed
+            if article.url not in existing_urls
+        ]
 
-                exists = self.db.scalar(
-                    select(ReadingArticle).where(
-                        ReadingArticle.url == str(article.url)
-                    )
-                )
+        if new_articles:
+            selected = random.choice(new_articles)
 
-                if exists:
-                    continue
+            row = ReadingArticle(
+                title        = selected.title,
+                url          = str(selected.url),
+                source       = selected.source,
+                published_at = selected.published_at
+            )
 
-                candidates.append(article)
+            repo.add(row)
 
-        if not candidates:
-            return None
+            state.RSS_SYNC(now)
 
-        selected = random.choice(candidates)
+            return row
 
-        row = ReadingArticle(
-            title=selected.title,
-            url=str(selected.url),
-            source=selected.feed_name,
-            published_at=selected.published_at,
-        )
-
-        self.db.add(row)
-        self.db.commit()
-        self.db.refresh(row)
-
-        return row
+        row : ReadingArticle | None = repo.get_random_article()
+        if row:
+            return row
+        return ReadingArticle()

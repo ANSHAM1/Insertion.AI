@@ -1,52 +1,48 @@
-from __future__ import annotations
-
 import feedparser  # type: ignore[import-untyped]
+from typing import Any
+from datetime import datetime
 
-from .models import RSSFeed
-
-
-
-class RSSAPI:
-    """
-    Thin wrapper around RSS feeds.
-
-    Responsibilities:
-        - Download RSS feed
-        - Parse XML
-        - Return raw entries
-    """
-
-    def fetch(self, feed: RSSFeed) -> list[dict[str, str]]:
-        """
-        Download a single RSS feed.
-
-        Returns:
-            Raw RSS entries.
-        """
-
-        parsed = feedparser.parse(str(feed.url)) # type: ignore
-
-        if parsed.bozo: # type: ignore
-            # Invalid XML / network error
-            return []
-
-        return parsed.entries # type: ignore
+from .feeds import RSS_FEEDS
+from .models import RSSFeed, ReadingArticleClass
 
 
-    def fetch_all(self, feeds: list[RSSFeed]) -> dict[str, list[dict[str, str]]]:
-        """
-        Download multiple feeds.
 
-        Returns:
-            {
-                "OpenAI": [...],
-                "Anthropic": [...]
-            }
-        """
+def parse_article(feed: RSSFeed, entry: dict[str, Any]) -> ReadingArticleClass:
+    published: datetime = datetime.min
 
-        result: dict[str, list[dict[str, str]]] = {}
+    if getattr(entry, "published_parsed", None):
+        published = datetime(*entry.published_parsed[:6])  # type: ignore
 
-        for feed in feeds:
-            result[feed.name] = self.fetch(feed)
+    return ReadingArticleClass(
+        title        = entry.get("title", ""),
+        url          = entry.get("link", ""),
+        source       = feed.name,
+        published_at = published
+    )
 
-        return result
+
+def fetch(feed: RSSFeed) -> list[ReadingArticleClass]:
+    parsed = feedparser.parse(str(feed.url))  # type: ignore
+
+    if getattr(parsed, "bozo", False):  # type: ignore
+        return []
+
+    result: list[ReadingArticleClass] = []
+
+    for entry in getattr(parsed, "entries", []):  # type: ignore
+        try:
+            article = parse_article(feed, entry)
+        except Exception:
+            continue
+        result.append(article)
+
+    return result
+
+
+def fetch_all() -> list[ReadingArticleClass]:
+    result: list[ReadingArticleClass] = []
+
+    for feed in RSS_FEEDS:
+        result.extend(fetch(feed))
+
+    return result

@@ -4,7 +4,7 @@ import httpx
 from typing import Any
 from datetime import datetime
 
-from .models import Job, JobSearchFilter, EmploymentType
+from .models import JobClass, JobSearchFilter, EmploymentType
 from .base import JobProvider
 
 
@@ -24,7 +24,7 @@ class AdzunaProvider(JobProvider):
             },
         )
 
-    def search_jobs(self, filters: JobSearchFilter) -> list[Job]:
+    def search_jobs(self, filters: JobSearchFilter) -> list[JobClass]:
 
         response = self._client.get(f"/{self._country}/search/1", params=self._build_params(filters))
 
@@ -32,7 +32,7 @@ class AdzunaProvider(JobProvider):
 
         payload = response.json()
 
-        jobs: list[Job] = []
+        jobs: list[JobClass] = []
 
         for item in payload.get("results", []):
 
@@ -56,7 +56,7 @@ class AdzunaProvider(JobProvider):
                 employment_type = EmploymentType.CONTRACT
 
             jobs.append(
-                Job(
+                JobClass(
                     company         = item.get("company", {}).get("display_name", "").strip(),
                     role            = item.get("title", "").strip(),
                     description     = item.get("description"),
@@ -110,7 +110,7 @@ class HirebaseProvider(JobProvider):
             },
         )
 
-    def search_jobs(self, filters: JobSearchFilter) -> list[Job]:
+    def search_jobs(self, filters: JobSearchFilter) -> list[JobClass]:
 
         response = self._client.post("/jobs/search", json=self._build_body(filters))
 
@@ -118,7 +118,7 @@ class HirebaseProvider(JobProvider):
 
         payload = response.json()
 
-        jobs: list[Job] = []
+        jobs: list[JobClass] = []
 
         for item in payload.get("jobs", []):
 
@@ -164,7 +164,7 @@ class HirebaseProvider(JobProvider):
                 ).date()
 
             jobs.append(
-                Job(
+                JobClass(
                     company         = item.get("company_name", "").strip(),
                     role            = item.get("job_title", "").strip(),
                     description     = item.get("description"),

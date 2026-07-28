@@ -44,5 +44,5 @@ class EventType(Enum):
 
 class EventSource(Enum):
     EMAIL = "EMAIL"
-    USER = "USER"
-    AI = "AI"
+    USER  = "USER"
+    AI    = "AI"
