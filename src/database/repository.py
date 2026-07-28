@@ -33,7 +33,7 @@ class JobRepository:
         return False
 
     def update(self, job: Job, updates: dict[str, object]) -> None:
-        valid_fields = Job.__table__.columns.keys()
+        valid_fields = set(Job.__table__.columns.keys()) 
 
         for field, value in updates.items():
             if field not in valid_fields:

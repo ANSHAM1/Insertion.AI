@@ -20,7 +20,3 @@ SessionLocal : sessionmaker[Session] = sessionmaker(
     autoflush=False,
     autocommit=False,
 )
-
-
-def get_session() -> Session:
-    return SessionLocal()
