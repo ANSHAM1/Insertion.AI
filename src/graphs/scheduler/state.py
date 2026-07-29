@@ -1,43 +1,34 @@
-from typing import TypedDict
-from datetime import datetime
-from enum import Enum
+from typing import Any, TypedDict
+from datetime import date
+from langchain_core.prompt_values import PromptValue
 
 from src.config.state_manager import StateManager
 
-from src.database.models import Event, ReadingArticle, DailySchedule
+from src.database.models import Event, DailySchedule
 from src.database.repository import RssRepository, DailyScheduleRepository, EventRepository
 
 from src.response_models.planner_output import PlannerOutput
 
 
 
-class Route(str, Enum):
-    SAVE   = "SAVE"
-    REPAIR = "REPAIR"
-    FAILED = "FAILED"
-
-
-
 class PlannerState(TypedDict):
-    date          : datetime
+    curr_date      : date
 
-    app_state     : StateManager
+    app_state      : StateManager
 
-    retries_left  : int
+    retries_left   : int
+    already_synced : bool
 
-    rss_repo      : RssRepository
-    schedule_repo : DailyScheduleRepository
-    event_repo    : EventRepository
+    rss_repo       : RssRepository
+    schedule_repo  : DailyScheduleRepository
+    event_repo     : EventRepository
 
-    events        : list[Event] | None
-    article       : ReadingArticle | None
+    events         : list[Event] | None
 
-    prev_schedule : DailySchedule | None
-    curr_schedule : PlannerOutput | None
+    prev_schedule  : DailySchedule | None
+    curr_schedule  : PlannerOutput | None
 
-    template      : object
+    template       : dict[str, Any]
 
-    prompt        : str
-    raw_response  : str
-
-    route         : Route
+    prompt         : PromptValue
+    raw_response   : str

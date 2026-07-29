@@ -1,8 +1,8 @@
 from langgraph.graph import StateGraph, START, END # type: ignore
 
-from src.graphs.scheduler.state import PlannerState, Route
+from src.graphs.scheduler.state import PlannerState
 
-from src.graphs.scheduler.nodes import (from_database_node, build_prompt_node, llm_inference_node, validation_node, validation_router, 
+from src.graphs.scheduler.nodes import (load_context_node, planner_router, build_prompt_node, llm_inference_node, validation_node, validation_router, 
                         repair_prompt_node, save_schedule_node, article_search_node)
 
 
@@ -12,7 +12,7 @@ builder = StateGraph(PlannerState)
 
 
 
-builder.add_node("database", from_database_node) # type: ignore
+builder.add_node("context", load_context_node) # type: ignore
 
 builder.add_node("prompt", build_prompt_node) # type: ignore
 
@@ -28,9 +28,16 @@ builder.add_node("article_search", article_search_node) # type: ignore
 
 
 
-builder.add_edge(START, "database")
+builder.add_edge(START, "context")
 
-builder.add_edge("database", "prompt")
+builder.add_conditional_edges(
+    "context",
+    planner_router,
+    {
+        "prompt": "prompt",
+        "end": END,
+    },
+)
 
 builder.add_edge("prompt", "llm")
 
@@ -40,9 +47,9 @@ builder.add_conditional_edges(
     "validate",
     validation_router,
     {
-        Route.SAVE: "save",
-        Route.REPAIR: "repair",
-        Route.FAILED: END,
+        "save"   : "save",
+        "repair" : "repair",
+        "failed" : END,
     },
 )
 

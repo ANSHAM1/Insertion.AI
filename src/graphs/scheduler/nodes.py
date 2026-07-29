@@ -1,9 +1,9 @@
 from typing import Any
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 from src.database.models import DailySchedule, ScheduleItem
 
-from src.graphs.scheduler.state import PlannerState, Route
+from src.graphs.scheduler.state import PlannerState
 
 from src.prompts.planner_prompt import planner_prompt
 from src.prompts.repair_prompt import repair_prompt
@@ -15,17 +15,35 @@ from src.services.rss_service import generate_article
 
 
 
-def from_database_node(state : PlannerState) -> dict[str, Any]:
+
+def load_context_node(state : PlannerState) -> dict[str, Any]:
+
+    now = state["app_state"].now()
+    last_sync = state["app_state"].PLANNER_STATE()
+
+    if last_sync is not None and last_sync.date() == now.date():
+        return {
+            "already_synced": True,
+        }
 
     schedule_repo = state["schedule_repo"]
     event_repo    = state["event_repo"]
 
-    prev_day_date = state["date"] - timedelta(days=1)
+    prev_day_date = state["curr_date"] - timedelta(days=1)
 
     return {
-        "prev_schedule" : schedule_repo.get_schedule(prev_day_date),
-        "events"        : event_repo.get_events(state["date"]),
+        "prev_schedule"  : schedule_repo.get_schedule(prev_day_date),
+        "events"         : event_repo.get_events(state["curr_date"]),
+        "already_synced" : False
     }
+
+
+
+def planner_router(state: PlannerState) -> str:
+    if state["already_synced"]:
+        return "end"
+
+    return "prompt"
 
 
 
@@ -33,8 +51,8 @@ def build_prompt_node(state : PlannerState) -> dict[str, Any]:
 
     prompt = planner_prompt.invoke(
         {
-            "today_date": state["date"],
-            "current_time": datetime.now(),
+            "today_date": state["curr_date"],
+            "current_time": state["app_state"].now(),
             "daily_template": state["template"],
             "yesterday_schedule": state["prev_schedule"],
             "today_events": state["events"]
@@ -74,15 +92,15 @@ def validation_node(state : PlannerState) -> dict[str, Any]:
 
 
 
-def validation_router(state: PlannerState) -> Route:
+def validation_router(state: PlannerState) -> str:
 
     if state["curr_schedule"] is not None:
-        return Route.SAVE
+        return "save"
 
     if state["retries_left"] <= 0:
-        return Route.FAILED
+        return "failed"
 
-    return Route.REPAIR
+    return "repair"
 
 
 
@@ -107,7 +125,7 @@ def save_schedule_node(state: PlannerState) -> dict[None, None]:
     schedule_repo = state["schedule_repo"]
 
     schedule = DailySchedule(
-        schedule_date   = state["date"],
+        schedule_date   = state["curr_date"],
         user_reflection = None,
     )
 
@@ -126,6 +144,8 @@ def save_schedule_node(state: PlannerState) -> dict[None, None]:
 
     schedule_repo.add(schedule)
 
+    state["app_state"].PLANNER_SYNC(state["app_state"].now())
+
     return {}
 
 
@@ -135,7 +155,7 @@ def article_search_node(state : PlannerState) -> dict[None, None]:
     now = state["app_state"].now()
     last_sync = state["app_state"].RSS_STATE()
 
-    if (last_sync and now - last_sync < state["app_state"].time_delta(24)):
+    if last_sync is not None and last_sync.date() == now.date():
         return {}
 
     generate_article(state["rss_repo"])

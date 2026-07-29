@@ -76,3 +76,11 @@ class StateManager:
 
     def MAIL_SYNC(self, account: str, now: datetime) -> None:
         self._set_datetime(now, "gmail", account, "last_sync")
+
+
+
+    def PLANNER_STATE(self) -> datetime | None:
+        return self._get_datetime("planner", "last_sync")
+
+    def PLANNER_SYNC(self, now: datetime) -> None:
+        self._set_datetime(now, "planner", "last_sync")
