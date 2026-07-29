@@ -1,25 +1,27 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     APP_NAME           : str = "InsertionAI"
-    APP_VERSION        : str = "0.1.0"
+    APP_VERSION        : str = "1.0.0"
 
     DATABASE_URL       : str
 
-    OPENCODE_API_KEY   : str = ""
-    OPENROUTER_API_KEY : str = ""
-    NVIDIA_API_KEY     : str = ""
+    OPENCODE_API_KEY   : SecretStr
+    OPENROUTER_API_KEY : SecretStr
+    NVIDIA_API_KEY     : SecretStr
 
     ADZUNA_APP_ID      : str = ""
     ADZUNA_APP_KEY     : str = ""
 
-    GMAIL_SECRETS_DIR  : Path = Path("secrets")
+    GMAIL_SECRETS_DIR  : Path
 
-    SYNC_DATA_PATH    : Path = Path("data/app_states.json")
+    SYNC_DATA_PATH     : Path
+    SCHEDULE_PATH      : Path
 
     LOG_LEVEL          : str = "INFO"
 

@@ -5,44 +5,29 @@ from src.database.repository import RssRepository
 
 from src.fetcher.rss.rss_api import fetch_all
 
-from src.config.state_manager import StateManager
 
 
-class RssService:
+def generate_article(repo : RssRepository) -> None:
+    parsed = fetch_all()
 
-    def __init__(self, repository: RssRepository) -> None:
-        self.repo  = repository
-        self.state = StateManager()
+    urls = [str(article.url) for article in parsed]
 
-    def generate_daily_article(self) -> None:
-        now = self.state.now()
-        last_sync = self.state.RSS_STATE()
+    existing_urls: set[str] = set(repo.get_existing_urls(urls))
 
-        if (last_sync and now - last_sync < self.state.time_delta(24)):
-            return
+    new_articles = [
+        article
+            for article in parsed
+            if article.url not in existing_urls
+        ]
 
-        parsed = fetch_all()
+    if new_articles:
+        selected = random.choice(new_articles)
 
-        urls = [str(article.url) for article in parsed]
+        row = ReadingArticle(
+            title        = selected.title,
+            url          = str(selected.url),
+            source       = selected.source,
+            published_at = selected.published_at        
+        )
 
-        existing_urls: set[str] = set(self.repo.get_existing_urls(urls))
-
-        new_articles = [
-            article
-                for article in parsed
-                if article.url not in existing_urls
-            ]
-
-        if new_articles:
-            selected = random.choice(new_articles)
-
-            row = ReadingArticle(
-                title        = selected.title,
-                url          = str(selected.url),
-                source       = selected.source,
-                published_at = selected.published_at
-            )
-
-            self.repo.add(row)
-
-        self.state.RSS_SYNC(now)
+        repo.add(row)

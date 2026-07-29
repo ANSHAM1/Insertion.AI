@@ -1,6 +1,7 @@
 from sqlalchemy import and_, select, func
 from sqlalchemy.orm import Session, selectinload
 from datetime import datetime, time, timedelta, date
+from typing import Any
 
 from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail, Event, DailySchedule, ScheduleItem
 
@@ -249,27 +250,25 @@ class DailyScheduleRepository:
             select(DailySchedule).where(DailySchedule.schedule_date == date)
             )
 
-    def add(self, schedule : DailySchedule, items : list[ScheduleItem]) -> bool:
+    def add(self, schedule: DailySchedule) -> bool:
         existing = self.find_duplicate(schedule.schedule_date)
 
-        if existing is not None:
+        if existing:
             return False
-        
+
         self.db.add(schedule)
-        self.db.add_all(items)
-
         self.db.commit()
-
         self.db.refresh(schedule)
-        for item in items:
-            self.db.refresh(item)
 
         return True
 
     def get(self, date : date) -> DailySchedule | None:
         return self.db.get(DailySchedule, date)
 
-    def update_item(self, scheduleitem : ScheduleItem, updates: dict[str, object]) -> None:
+    def update_user_reflection(self, schedule : DailySchedule, update : str) -> None:
+        setattr(schedule, "user_reflection", update)
+
+    def update_item(self, scheduleitem : ScheduleItem, updates: dict[str, Any]) -> None:
         valid_fields = set(ScheduleItem.__table__.columns.keys())
 
         for field, value in updates.items():
