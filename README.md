@@ -120,3 +120,28 @@
                                                        │
                                                        ▼
                                         Used for tomorrow's planning
+        
+        
+        
+        
+        START
+           │
+        load_context
+           │
+           ├── END
+           │
+           └── build_prompt
+                  │
+                 llm
+                  │
+              validate
+               │    │
+               │    └── repair
+               │          │
+               └──────────┘
+                  │
+                 save
+                  │
+            article_search
+                  │
+                 END
