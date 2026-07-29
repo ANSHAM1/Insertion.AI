@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from src.database.models import DailySchedule, ScheduleItem
 
-from src.graphs.scheduler.state import PlannerState
+from src.agents.planner_agent.state import PlannerState
 
 from src.prompts.planner_prompt import planner_prompt
 from src.prompts.repair_prompt import repair_prompt

@@ -13,7 +13,6 @@ class Settings(BaseSettings):
 
     OPENCODE_API_KEY   : SecretStr
     OPENROUTER_API_KEY : SecretStr
-    NVIDIA_API_KEY     : SecretStr
 
     ADZUNA_APP_ID      : str = ""
     ADZUNA_APP_KEY     : str = ""

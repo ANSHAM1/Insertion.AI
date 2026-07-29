@@ -1,7 +1,7 @@
 from datetime import date
 import json
 
-from src.graphs.scheduler.workflow import planner_graph
+from src.agents.planner_agent.workflow import planner_graph
 
 from src.database.connection import SessionLocal
 from src.database.repository import DailyScheduleRepository, EventRepository, RssRepository

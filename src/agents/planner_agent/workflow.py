@@ -1,8 +1,8 @@
 from langgraph.graph import StateGraph, START, END # type: ignore
 
-from src.graphs.scheduler.state import PlannerState
+from src.agents.planner_agent.state import PlannerState
 
-from src.graphs.scheduler.nodes import (load_context_node, planner_router, build_prompt_node, llm_inference_node, validation_node, validation_router, 
+from src.agents.planner_agent.nodes import (load_context_node, planner_router, build_prompt_node, llm_inference_node, validation_node, validation_router, 
                         repair_prompt_node, save_schedule_node, article_search_node)
 
 

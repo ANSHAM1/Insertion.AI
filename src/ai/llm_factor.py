@@ -7,7 +7,6 @@ class LLMFactory:
 
     OPENROUTER_URL = "https://openrouter.ai/api/v1"
     OPENCODE_URL = "https://opencode.ai/zen/v1"
-    NVIDIA_URL = "https://integrate.api.nvidia.com/v1"
 
     @staticmethod
     def planner():
