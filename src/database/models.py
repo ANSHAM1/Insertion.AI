@@ -54,8 +54,8 @@ class JobLookup(Base):
 
 
 
-class JobColledge(Base):
-    __tablename__ = "jobs_colledge"
+class JobCollege(Base):
+    __tablename__ = "jobs_college"
 
     id                 : Mapped[int]                    = mapped_column(primary_key=True)
 
@@ -101,7 +101,7 @@ class Email(Base):
     ai_processed     : Mapped[bool]             = mapped_column(Boolean, default=False)
     summary          : Mapped[str | None]       = mapped_column(String(1000), nullable=True)
 
-    job_colledge_id  : Mapped[int | None]       = mapped_column(nullable=True)
+    job_college_id  : Mapped[int | None]       = mapped_column(nullable=True)
     
     created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

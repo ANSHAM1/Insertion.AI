@@ -4,8 +4,8 @@ from datetime import datetime, time, timedelta, date
 from typing import Any
 from collections.abc import Iterable
 
-from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail, Event, DailySchedule, ScheduleItem
-
+from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail, Event, DailySchedule, ScheduleItem, JobCollege
+from src.database.enums import RecruitmentType
 
 
 class JobRepository:
@@ -70,6 +70,51 @@ class JobRepository:
 
         self.db.add_all(JobLookup(id=job_id) for job_id in job_ids)
         self.db.commit()
+
+
+
+class JobCollegeRepository:
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def find_duplicate(self, company: str, role: str, recruitment_type: RecruitmentType | None) -> JobCollege | None:
+
+        return self.db.scalar(
+            select(JobCollege).where(
+                and_(
+                    JobCollege.company == company,
+                    JobCollege.role == role,
+                    JobCollege.recruitment_type == recruitment_type,
+                )
+            )
+        )
+
+    def add(self, job: JobCollege) -> bool:
+
+        existing = self.find_duplicate(
+            job.company,
+            job.role,
+            job.recruitment_type,
+        )
+
+        if existing is not None:
+            return False
+
+        self.db.add(job)
+        self.db.commit()
+        self.db.refresh(job)
+
+        return True
+
+    def get(self, id: int) -> JobCollege | None:
+        return self.db.get(JobCollege, id)
+
+    def get_all(self) -> list[JobCollege]:
+        return list(
+            self.db.scalars(select(JobCollege)).all()
+        )
+
 
 
 class RssRepository:
@@ -149,6 +194,22 @@ class GmailRepository:
     def get(self, id: int) -> Email | None:
         return self.db.get(Email, id)
 
+    def filter_new_emails(self, message_ids: list[str]) -> list[str]:
+        new_message_ids: list[str] = []
+
+        for message_id in message_ids:
+
+            exists = self.db.scalar(
+                select(Email).where(
+                    Email.gmail_message_id == message_id
+                )
+            )
+
+            if exists is None:
+                new_message_ids.append(message_id)
+
+        return new_message_ids
+
 
 class FollowUpRepository:
 
@@ -184,6 +245,20 @@ class FollowUpRepository:
     def get(self, id: int) -> FollowUpEmail | None:
         return self.db.get(FollowUpEmail, id)
 
+    def filter_new_emails(self, message_ids: list[str]) -> list[str]:
+        new_message_ids: list[str] = []
+
+        for message_id in message_ids:
+            exists = self.db.scalar(
+                select(FollowUpEmail).where(
+                    FollowUpEmail.gmail_message_id == message_id
+                    )
+                )
+
+            if exists is None:
+                new_message_ids.append(message_id)
+
+        return new_message_ids
 
 class EventRepository:
 

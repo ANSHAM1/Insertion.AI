@@ -69,14 +69,6 @@ class StateManager:
     def JOB_SYNC(self, now: datetime) -> None:
         self._set_datetime(now, "job", "adzuna_last_sync")
 
-  
-
-    def MAIL_STATE(self, account: str) -> datetime | None:
-        return self._get_datetime("gmail", account, "last_sync")
-
-    def MAIL_SYNC(self, account: str, now: datetime) -> None:
-        self._set_datetime(now, "gmail", account, "last_sync")
-
 
 
     def PLANNER_STATE(self) -> datetime | None:
@@ -84,3 +76,14 @@ class StateManager:
 
     def PLANNER_SYNC(self, now: datetime) -> None:
         self._set_datetime(now, "planner", "last_sync")
+
+
+
+    def GMAIL_STATE(self, account: str) -> str:
+        file : Any = self._load_state()
+        return file["gmail"][account]["last_sync"]
+
+    def GMAIL_SYNC(self, account: str, latest_hist_id: str) -> None:
+        state = self._load_state()
+        state["gmail"][account]["last_sync"] = latest_hist_id
+        self._save_state(state)

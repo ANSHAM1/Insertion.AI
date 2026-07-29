@@ -11,6 +11,7 @@ class GmailAPI:
         self.account = account
         self.service: Any = build("gmail", "v1", credentials=get_credentials(account))
 
+
     def search_messages(self, query: str, max_results: int = 100) -> list[str]:
         """
         Search Gmail using Gmail search syntax.
@@ -41,3 +42,23 @@ class GmailAPI:
         ids = self.search_messages(query=query, max_results=max_results)
 
         return [self.get_message(message_id) for message_id in ids]
+
+
+    def get_mailbox_history(self, history_id: str) -> dict[str, Any]:
+        """
+        Fetch raw Gmail mailbox history starting from the given history ID.
+
+        Args:
+            history_id: Last saved Gmail history ID
+
+        Returns:
+            Raw response from Gmail History API.
+        """
+
+        return (
+            self.service.users().history().list(
+                userId="me",
+                startHistoryId=history_id,
+                historyTypes=["messageAdded"]
+            ).execute()
+        )

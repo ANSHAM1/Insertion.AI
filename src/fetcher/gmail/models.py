@@ -21,8 +21,6 @@ class ParsedEmail(BaseModel):
     sender_name      : str
     sender_email     : str
 
-    recipient        : str
-
     received_at      : datetime
 
     snippet          : str

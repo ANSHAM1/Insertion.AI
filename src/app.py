@@ -1,45 +1,47 @@
 from datetime import date
-import json
 
-from src.agents.planner_agent.workflow import planner_graph
-
-from src.database.connection import SessionLocal
-from src.database.repository import DailyScheduleRepository, EventRepository, RssRepository
-
-from src.config.state_manager import StateManager
+from src.agents.college_agent.workflow import college_graph
 
 from src.config.settings import get_settings
+from src.config.state_manager import StateManager
+
+from src.database.connection import SessionLocal
+from src.database.repository import (
+    GmailRepository,
+    EventRepository,
+    JobCollegeRepository,
+)
+
 
 db = SessionLocal()
 settings = get_settings()
 
+app_state = StateManager()
+
+
+
+latest_hist_id = app_state.GMAIL_STATE("college")
 
 
 state : object = {
-    "date"           : date.today(),
+    "curr_date"       : date.today(),
 
-    "app_state"      : StateManager(),
+    "app_state"       : app_state,
 
-    "retries_left"   : 2,
-    "already_synced" : False,
+    "latest_hist_id"  : latest_hist_id,
 
-    "schedule_repo"  : DailyScheduleRepository(db),
-    "event_repo"     : EventRepository(db),
-    "rss_repo"       : RssRepository(db),
+    "emails"          : [],
+    "output"          : None,
 
-    "prev_schedule"  : None,
-    "curr_schedule"  : None,
+    "gmail_repo"      : GmailRepository(db),
+    "event_repo"      : EventRepository(db),
+    "job_colleg_repo" : JobCollegeRepository(db),
 
-    "events"         : [],
-
-    "template"       : json.loads(settings.SCHEDULE_PATH.read_text()),
-
-    "prompt"         : "",
-    "raw_response"   : ""
+    "prompt"          : ""
 }
 
-# result = planner_graph.invoke(state) # type: ignore
 
-for step in planner_graph.stream(state): # type: ignore
+for step in college_graph.stream(state):  # type: ignore
     print("=" * 60)
     print(step)
+

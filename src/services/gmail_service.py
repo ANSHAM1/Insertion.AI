@@ -1,94 +1,65 @@
-from src.database.repository import GmailRepository, FollowUpRepository
-from src.database.models import Email, FollowUpEmail
-
 from src.fetcher.gmail.gmail_api import GmailAPI
 from src.fetcher.gmail.models import ParsedEmail
+from src.fetcher.gmail.parser import parse_email
 
-from src.config.state_manager import StateManager
-from datetime import datetime
+from typing import Any
 
 
 
-class GmailService:
+def get_new_message_ids(history: dict[str, Any]) -> tuple[set[str], str]:
+    message_ids: set[str] = set()
 
-    def __init__(self, repository: GmailRepository,follow_up : FollowUpRepository, account : str) -> None:
-        self.gmail = GmailAPI(account)
-        self.state = StateManager()
+    for record in history.get("history", []):
+        for added in record.get("messagesAdded", []):
+            message_ids.add(added["message"]["id"])
 
-        self.repo           = repository
-        self.repo_follow_up = follow_up
+    latest_history_id = history["historyId"]
 
-        self.account = account
+    return message_ids, latest_history_id
 
-    def fetch_emails(self) -> list[ParsedEmail]:
-        now = self.state.now()
-        last_sync = self.state.JOB_STATE()
 
-        if (last_sync and now - last_sync < self.state.time_delta(1)):
-            return []
 
-        custom : str = "newer_than:5d"
-        
-        query  : str = (
-            f"{custom} "
-            "-category:promotions "
-            "-category:social "
-            "-in:spam "
-            "-in:trash"
+def get_latest_history_id(messages: list[dict[str, Any]]) -> str:
+    if not messages:
+        return ""
+
+    return str(
+        max(
+            int(message["historyId"])
+            for message in messages
         )
-
-        if last_sync == None:
-            custom = "newer_than:10d"
-        else:
-            if now - last_sync > self.state.time_delta(5 * 24):
-                custom = "newer_than:5d"
-            else:
-                custom = f"after:{int(last_sync.timestamp())}"
+    )
 
 
-        emails: list[ParsedEmail] = []
 
-        messages = self.gmail.get_messages(query)
-        for message in messages:
+def get_ids_from(messages: list[dict[str, Any]]) -> list[str]:
+    return [message["id"] for message in messages]
 
 
-            raw_received = message.get("received_at", None)
-            if isinstance(raw_received, datetime):
-                received_at_val = raw_received
-            else:
-                try:
-                    if isinstance(raw_received, (int, float)):
-                        received_at_val = datetime.fromtimestamp(int(raw_received))
-                    elif isinstance(raw_received, str) and raw_received:
-                        received_at_val = datetime.fromisoformat(raw_received)
-                    else:
-                        received_at_val = now
-                except Exception:
-                    received_at_val = now
 
-            emails.append(
-                ParsedEmail(
-                    gmail_message_id = message.get("gmail_message_id", "") or "",
-                    gmail_thread_id  = message.get("gmail_thread_id", "") or "",
-                    account          = message.get("account", self.account) or self.account,
-                    subject          = message.get("subject", "") or "",
-                    sender_name      = message.get("sender_name", "") or "",
-                    sender_email     = message.get("sender_email", "") or "",
-                    recipient        = message.get("recipient", "") or "",
-                    received_at      = received_at_val,
-                    snippet          = message.get("snippet", "") or "",
-                    body             = message.get("body", "") or "",
-                    attachments      = message.get("attachments", []) or [],
-                )
-            )
+def fetch_emails(account : str, history_id : str) -> tuple[list[ParsedEmail], list[str], str]:
+    gmail_api = GmailAPI(account)
 
-        self.state.MAIL_SYNC(self.account, now)
+    if history_id == "":
 
-        return emails
+        query = "newer_than:1d -category:promotions -category:social -in:spam -in:trash"
+        messages = gmail_api.get_messages(query)
+        latest_history_id = get_latest_history_id(messages)
+        new_ids = get_ids_from(messages)
 
-    def store_emails(self, emails: list[Email], follow_up : list[FollowUpEmail]) -> None:
-        for email in emails:
-            self.repo.add(email)
+    else:
+        
+        history = gmail_api.get_mailbox_history(history_id)
+        new_ids, latest_history_id = get_new_message_ids(history)
+        messages : list[dict[str, Any]] = []
+        for message_id in new_ids:
+            response = gmail_api.get_message(message_id)
+            messages.append(response)
 
-        for email in follow_up:
-            self.repo_follow_up.add(email)
+
+    emails     : list[ParsedEmail] = []
+
+    for message in messages:
+        emails.append(parse_email(message, account))
+
+    return emails, list(new_ids), latest_history_id

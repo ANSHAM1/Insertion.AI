@@ -3,14 +3,11 @@ from .models import AttachmentInfo, ParsedEmail
 
 import base64
 from typing import Any
+import re
 
 
 
 def get_headers(message: dict[str, Any]) -> dict[str, str]:
-    """
-    Return all email headers as a dictionary.
-    """
-
     headers = (message.get("payload", {}).get("headers", []))
 
     return {
@@ -19,19 +16,11 @@ def get_headers(message: dict[str, Any]) -> dict[str, str]:
     }
 
 def get_header(message: dict[str, Any], name: str, default: str = "") -> str:
-    """
-    Retrieve a single email header.
-    """
-
     return get_headers(message).get(name, default)
 
 
 
 def _decode(data: str) -> str:
-    """
-    Decode Gmail base64url encoded text.
-    """
-
     if not data:
         return ""
 
@@ -42,10 +31,6 @@ def _decode(data: str) -> str:
 
 
 def _extract_plain_text(payload: dict[str, Any]) -> str:
-    """
-    Recursively extract text/plain body.
-    """
-
     mime_type = payload.get("mimeType")
 
     if mime_type == "text/plain":
@@ -61,11 +46,27 @@ def _extract_plain_text(payload: dict[str, Any]) -> str:
 
 
 
-def get_body(message: dict[str, Any]) -> str:
-    """
-    Extract the plain-text email body.
-    """
+def clean_email_body(body: str) -> str:
+    # remove huge email lists
+    body = re.sub(
+        r'([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\s*,\s*){10,}',
+        "[Recipient list removed]",
+        body,
+        flags=re.IGNORECASE,
+    )
 
+    # remove quoted replies
+    body = re.split(
+        r"\nOn .*? wrote:",
+        body,
+        maxsplit=1,
+    )[0]
+
+    return body.strip()
+
+
+
+def get_body(message: dict[str, Any]) -> str:
     payload = message.get("payload", {})
 
     return _extract_plain_text(payload)
@@ -77,10 +78,6 @@ def get_body(message: dict[str, Any]) -> str:
 
 
 def _extract_attachments(payload: dict[str, Any]) -> list[AttachmentInfo]:
-    """
-    Recursively extract attachment metadata from a Gmail message payload.
-    """
-
     attachments: list[AttachmentInfo] = []
 
     def walk(part: dict[str, Any]) -> None:
@@ -148,12 +145,7 @@ def get_attachments(message: dict[str, Any]) -> list[AttachmentInfo]:
 
 
 def parse_email(message: dict[str, Any], account: str) -> ParsedEmail:
-    """
-    Convert a Gmail API response into a ParsedEmail.
-    """
-
     sender = get_header(message, "From")
-    recipient = get_header(message, "To")
 
     sender_name, sender_email = parseaddr(sender)
 
@@ -171,9 +163,8 @@ def parse_email(message: dict[str, Any], account: str) -> ParsedEmail:
         subject          = get_header(message, "Subject"),
         sender_name      = sender_name,
         sender_email     = sender_email,
-        recipient        = recipient,
         received_at      = received_at, # type: ignore
         snippet          = get_snippet(message),
-        body             = get_body(message),
+        body             = clean_email_body(get_body(message)),
         attachments      = get_attachments(message),
     )

@@ -7,7 +7,7 @@ from src.config.state_manager import StateManager
 from src.database.models import Event, DailySchedule
 from src.database.repository import RssRepository, DailyScheduleRepository, EventRepository
 
-from src.response_models.planner_output import PlannerOutput
+from src.validators.planner_output import PlannerOutput
 
 
 
