@@ -1,7 +1,8 @@
-from sqlalchemy import and_, select, func
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session, selectinload
 from datetime import datetime, time, timedelta, date
 from typing import Any
+from collections.abc import Iterable
 
 from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail, Event, DailySchedule, ScheduleItem
 
@@ -73,31 +74,37 @@ class JobRepository:
 
 class RssRepository:
 
+    BATCH_SIZE = 1000
+    
     def __init__(self, db: Session):
         self.db = db
 
-    def find_duplicate(self, url : str) -> ReadingArticle | None:
-        return self.db.scalar(
-            select(ReadingArticle).where(
-                ReadingArticle.url == url
-            )
-        )
+    @staticmethod
+    def _chunks(lst: list[str], size: int) -> Iterable[list[str]]:
+        for i in range(0, len(lst), size):
+            yield lst[i:i + size]
 
-    def get_random_article(self) -> ReadingArticle | None:
+    def find_duplicate(self, url: str) -> ReadingArticle | None:
         return self.db.scalar(
-            select(ReadingArticle)
-            .order_by(func.newid())      
-            .limit(1)
+            select(ReadingArticle).where(ReadingArticle.url == url)
         )
 
     def get_existing_urls(self, urls: list[str]) -> set[str]:
-        rows = self.db.scalars(
-            select(ReadingArticle.url).where(
-                ReadingArticle.url.in_(urls)
-            )
-        )
+        if not urls:
+            return set()
 
-        return set(rows)
+        existing: set[str] = set()
+
+        for batch in self._chunks(urls, self.BATCH_SIZE):
+            existing.update(
+                self.db.scalars(
+                    select(ReadingArticle.url).where(
+                        ReadingArticle.url.in_(batch)
+                    )
+                ).all()
+            )
+
+        return existing
 
     def add(self, article: ReadingArticle) -> bool:
         existing = self.find_duplicate(article.url)
@@ -189,7 +196,7 @@ class EventRepository:
 
         results = self.db.scalars(
             select(Event).where(
-                Event.completed.is_(False),
+                Event.completed == False,
                 Event.start_time < day_end,
                 Event.end_time >= day_start,
             )

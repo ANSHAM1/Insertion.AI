@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, START, END # type: ignore
 
 from src.graphs.scheduler.state import PlannerState, Route
 
-from .nodes import (from_database_node, build_prompt_node, llm_inference_node, validation_node, validation_router, 
+from src.graphs.scheduler.nodes import (from_database_node, build_prompt_node, llm_inference_node, validation_node, validation_router, 
                         repair_prompt_node, save_schedule_node, article_search_node)
 
 

@@ -73,18 +73,18 @@ note should be a concise human-readable description of the task.
 
 Output Schema
 
-{
+{{
   "items": [
-    {
+    {{
       "title": "string",
       "start_time": "HH:MM",
       "end_time": "HH:MM",
       "sort_order": 1,
       "completed": false,
       "note": "string"
-    }
+    }}
   ]
-}
+}}
 """,
         ),
         (

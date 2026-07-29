@@ -46,6 +46,14 @@ class Job(Base):
 
 
 
+class JobLookup(Base):
+    __tablename__ = "job_lookup"
+
+    id         : Mapped[str]      = mapped_column(String(200), primary_key=True)
+    created_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+
 class JobColledge(Base):
     __tablename__ = "jobs_colledge"
 
@@ -72,6 +80,7 @@ class JobColledge(Base):
     created_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
                                                                         onupdate=lambda: datetime.now(timezone.utc))
+
 
 
 class Email(Base):
@@ -195,12 +204,6 @@ class ReadingArticle(Base):
     created_at   : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
-
-class JobLookup(Base):
-    __tablename__ = "job_lookup"
-
-    id         : Mapped[str]      = mapped_column(String(200), primary_key=True, autoincrement=True)
-    created_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 
