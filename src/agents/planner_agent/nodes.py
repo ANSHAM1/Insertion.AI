@@ -66,7 +66,7 @@ def build_prompt_node(state : PlannerState) -> dict[str, Any]:
 
 def llm_inference_node(state : PlannerState) -> dict[str, Any]:
 
-    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=PlannerOutput)
+    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=PlannerOutput, temperature=0.2)
 
     if response is None:
         return {
