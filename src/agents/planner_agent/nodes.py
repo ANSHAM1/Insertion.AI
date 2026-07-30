@@ -92,30 +92,34 @@ def validation_router(state: PlannerState) -> str:
 def save_schedule_node(state: PlannerState) -> dict[str, Any]:
 
     planner_output = state["curr_schedule"]
-
-    schedule_repo = state["schedule_repo"]
+    assert planner_output is not None
 
     schedule = DailySchedule(
-        schedule_date   = state["curr_date"],
-        user_reflection = None,
+        schedule_date=state["curr_date"],
+        user_reflection=None,
     )
 
-    assert planner_output is not None    
     for item in planner_output.items:
         schedule.items.append(
             ScheduleItem(
-                title      = item.title,
-                start_time = item.start_time,
-                end_time   = item.end_time,
-                sort_order = item.sort_order,
-                completed  = item.completed,
-                note       = item.note,
+                title=item.title,
+                start_time=item.start_time,
+                end_time=item.end_time,
+                sort_order=item.sort_order,
+                completed=item.completed,
+                note=item.note,
             )
         )
 
-    schedule_repo.add(schedule)
+    try:
+        state["schedule_repo"].add(schedule)
+        state["schedule_repo"].commit()
+        
+        state["app_state"].PLANNER_SYNC(state["app_state"].now())
 
-    state["app_state"].PLANNER_SYNC(state["app_state"].now())
+    except Exception:
+        state["schedule_repo"].rollback()
+        raise
 
     return {}
 

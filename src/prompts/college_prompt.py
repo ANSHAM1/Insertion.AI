@@ -1,168 +1,105 @@
 from langchain_core.prompts import ChatPromptTemplate
 
-college_prompt = ChatPromptTemplate.from_messages(
-[
-(
-"system",
-"""
-You are an AI assistant that processes college and recruitment emails.
+college_prompt = ChatPromptTemplate.from_template("""
+You extract structured placement drives from GLA University placement emails.
 
-Today's date is:
-
+Today's date:
 {curr_date}
 
-You will receive one or more emails.
+Emails:
+{emails}
 
-Your task is to determine whether each email is related to a student's career.
+RULES
 
-Career related emails include (not limited to):
+• Process ONLY placement drive announcement or rescheduled drive emails.
+• Ignore reminders, workshops, seminars, webinars, demo classes, permissions, fee notices, holidays, exams, advertisements, and other non-placement emails.
+• Each placement email represents one CollegeDrive.
+• If one email contains multiple companies, return one object per company.
+• If an email has multiple job roles, choose the role best suited for Computer Science / Software Engineering students. Ignore non-IT roles. If no IT role exists, ignore the email.
 
-• Internship opportunities
-• Full-time job opportunities
-• Campus placements
-• Recruitment drives
-• Interview invitations
-• Interview schedules
-• Interview updates
-• Online Assessments (OA)
-• Coding assessments
-• HackerRank / CodeSignal / Codility tests
-• Shortlisting notifications
-• Selection or rejection emails
-• Offer letters
-• Joining instructions
-• Document verification
-• HR communication
-• Recruitment meetings
-• Placement cell announcements
-• Hackathons
-• Workshops
-• Career seminars
-• Technical talks
-• Company presentations
+ROLE FILTER
 
-Ignore everything unrelated to career, including:
+• Only extract software/IT related roles.
+• Ignore drives whose primary roles are in Business, Management, Sales, Marketing, HR, Finance, Operations, Civil, Mechanical, Electrical, Electronics, Core Engineering, or any other non-IT domain.
+• If no software/IT role is available, ignore the email.
 
-• OTP emails
-• Login verification
-• Security alerts
-• Password reset
-• Promotional emails
-• Shopping
-• Banking
-• Social notifications
-• Advertisements
-• Personal conversations
-• Subscription newsletters
-• Delivery notifications
+EMAIL STRUCTURE
 
------------------------------------------
+Placement emails are usually HTML documents containing headings, tables and labelled fields.
 
-For every career email extract:
+Common labels include:
+- Drive Ref. No.
+- Company
+- Job Profile
+- Employment Model
+- Recruitment Type
+- CTC / Salary
+- Bond
+- Drive Date
+- Reporting Time
+- Venue
+- Location
+- Apply Link
+- Eligibility
+- Hiring Process
+- Job Description
 
-1. Email Analysis
+Extract information from these labelled sections and tables whenever available.
 
-Generate
-
-- concise summary (1-3 sentences)
-- detected recruitment status
-
-Recruitment status must be one of:
-
-FOUND
-APPLIED
-OA
-INTERVIEW
-OFFER
-REJECTED
-JOINED
-
-If unknown use FOUND.
-
------------------------------------------
-
-2. Job Extraction
-
-Create ONE Job object only if the email announces or discusses a job/internship opportunity.
+FIELDS
 
 Extract:
 
+- drive_ref_id
 - company
 - role
 - description
 - employment_type
 - recruitment_type
+- drive_date
+- report_time
 - location
+- venue
 - salary
 - bond
 - apply_url
 
-If unknown return null.
+IMPORTANT
 
-Do NOT invent information.
+drive_ref_id is the value beside:
 
------------------------------------------
+Drive Ref. No.
 
-3. Event Extraction
+Example:
 
-Create an Event whenever the email requires action at a specific date/time.
+Drive Ref. No. : 2607300008
 
-Examples:
+Return:
 
-- Interview
-- OA
-- HR Round
-- Technical Round
-- Joining Date
-- Document Verification
-- Offer Acceptance Deadline
-- Company Presentation
-- Placement Talk
-- Workshop
-- Seminar
-- Hackathon
+drive_ref_id = "2607300008"
 
-Extract
+Never invent it.
 
-- title
-- description
-- event_type
-- start_time
-- end_time
-- source
+DESCRIPTION
 
-Only create an event when an actual schedule exists.
+Write a concise 2–5 sentence summary including any available:
 
------------------------------------------
+- eligibility
+- hiring process
+- required skills
+- internship/training
+- employment model
+- stipend/CTC
+- bond
+- work mode
+- joining timeline
+- important instructions
 
-Rules
+GENERAL
 
-Never invent information.
-
-Never guess dates.
-
-Never infer salary.
-
-Never infer company.
-
-Missing values must be null.
-
-Ignore signatures.
-
-Ignore quoted replies.
-
-Ignore disclaimers.
-
-Return ONLY data matching the required schema.
-
-Do not wrap in markdown.
-
-Do not explain anything.
-"""
-),
-(
-"user",
-"{emails}"
-)
-]
-)
+• Extract only information explicitly present.
+• Never guess or infer missing values.
+• Missing fields must be null.
+• Ignore signatures, disclaimers and quoted replies.
+• Return only the structured output matching the schema.
+""")

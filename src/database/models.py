@@ -1,7 +1,7 @@
-from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text)
+from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text, Time)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, time
 
 from .enums import (EmailAccount, EmploymentType, JobStatus, RecruitmentType, EventType, EventSource)
 
@@ -54,31 +54,33 @@ class JobLookup(Base):
 
 
 
-class JobCollege(Base):
+class CollegeDrive(Base):
     __tablename__ = "jobs_college"
 
-    id                 : Mapped[int]                    = mapped_column(primary_key=True)
+    drive_ref_id     : Mapped[str]                    = mapped_column(String(128), primary_key=True)
 
-    company            : Mapped[str]                    = mapped_column(String(200), index=True)
-    description        : Mapped[str | None]             = mapped_column(Text, nullable=True)
-    role               : Mapped[str]                    = mapped_column(String(200), index=True)
-    employment_type    : Mapped[EmploymentType | None]  = mapped_column(SqlEnum(EmploymentType), nullable=True)
-
-    recruitment_type   : Mapped[RecruitmentType | None] = mapped_column(SqlEnum(RecruitmentType), nullable=True)
+    company          : Mapped[str]                    = mapped_column(String(200), index=True)
+    role             : Mapped[str]                    = mapped_column(String(200))
+    description      : Mapped[str | None]             = mapped_column(Text)
+    employment_type  : Mapped[EmploymentType | None]  = mapped_column(SqlEnum(EmploymentType), nullable=True)
+    recruitment_type : Mapped[RecruitmentType | None] = mapped_column(SqlEnum(RecruitmentType), nullable=True)
     
-    location           : Mapped[str | None]             = mapped_column(String(150), nullable=True)
-    salary             : Mapped[str | None]             = mapped_column(String(100), nullable=True)
-    bond               : Mapped[int | None]             = mapped_column(nullable=True)
-    apply_url          : Mapped[str | None]             = mapped_column(String(600), nullable=True)
+    location         : Mapped[str | None]             = mapped_column(String(150), nullable=True)
+    salary           : Mapped[str | None]             = mapped_column(String(100), nullable=True)
+    bond             : Mapped[int | None]             = mapped_column(nullable=True)
+    apply_url        : Mapped[str | None]             = mapped_column(String(600), nullable=True)
 
-    applied_at         : Mapped[date | None]            = mapped_column(Date, nullable=True)
-    status             : Mapped[JobStatus]              = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
+    status           : Mapped[JobStatus]              = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
 
-    resume_tailored    : Mapped[bool]                   = mapped_column(Boolean, default=False)
-    resume_path        : Mapped[str | None]             = mapped_column(String(400), nullable=True)
+    drive_date       : Mapped[date | None]            = mapped_column(Date, nullable=True)
+    report_time      : Mapped[time | None]            = mapped_column(Time, nullable=True)
+    venue            : Mapped[str | None]             = mapped_column(String(100), nullable=True)
 
-    created_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
+    resume_tailored  : Mapped[bool]                   = mapped_column(Boolean, default=False)
+    resume_path      : Mapped[str | None]             = mapped_column(String(200), nullable=True)
+
+    created_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
                                                                         onupdate=lambda: datetime.now(timezone.utc))
 
 
@@ -98,10 +100,7 @@ class Email(Base):
     sender_email     : Mapped[str]              = mapped_column(String(250))
     received_at      : Mapped[datetime]         = mapped_column(DateTime(timezone=True), index=True)
 
-    ai_processed     : Mapped[bool]             = mapped_column(Boolean, default=False)
     summary          : Mapped[str | None]       = mapped_column(String(1000), nullable=True)
-
-    job_college_id  : Mapped[int | None]       = mapped_column(nullable=True)
     
     created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

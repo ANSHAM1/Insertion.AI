@@ -30,4 +30,10 @@ def generate_article(repo : RssRepository) -> None:
             published_at = selected.published_at        
         )
 
-        repo.add(row)
+        try:
+            repo.add(row)
+            repo.commit()
+
+        except Exception:
+            repo.rollback()
+            raise

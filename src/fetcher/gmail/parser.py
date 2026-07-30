@@ -1,6 +1,7 @@
 from email.utils import parseaddr, parsedate_to_datetime
 from .models import AttachmentInfo, ParsedEmail
 
+from bs4 import BeautifulSoup
 import base64
 from typing import Any
 import re
@@ -30,19 +31,41 @@ def _decode(data: str) -> str:
 
 
 
-def _extract_plain_text(payload: dict[str, Any]) -> str:
-    mime_type = payload.get("mimeType")
+def _extract_all_text(payload: dict[str, Any]) -> str:
+    texts: list[str] = []
 
-    if mime_type == "text/plain":
-        body = payload.get("body", {})
-        return _decode(body.get("data", ""))
+    def walk(part: dict[str, Any]) -> None:
+        mime = part.get("mimeType", "")
 
-    for part in payload.get("parts", []):
-        text = _extract_plain_text(part)
-        if text:
-            return text
+        if mime.startswith("text/"):
+            body = part.get("body", {})
+            data = body.get("data", "")
 
-    return ""
+            if data:
+                text = _decode(data)
+
+                if mime == "text/html":
+                    text = BeautifulSoup(text, "html.parser").get_text("\n")
+
+                text = text.strip()
+
+                if text:
+                    texts.append(
+                        f"""
+==============================
+MIME TYPE: {mime}
+==============================
+
+{text}
+"""
+                    )
+
+        for child in part.get("parts", []):
+            walk(child)
+
+    walk(payload)
+
+    return "\n\n".join(texts)
 
 
 
@@ -69,7 +92,7 @@ def clean_email_body(body: str) -> str:
 def get_body(message: dict[str, Any]) -> str:
     payload = message.get("payload", {})
 
-    return _extract_plain_text(payload)
+    return _extract_all_text(payload)
 
 
 
@@ -145,6 +168,7 @@ def get_attachments(message: dict[str, Any]) -> list[AttachmentInfo]:
 
 
 def parse_email(message: dict[str, Any], account: str) -> ParsedEmail:
+
     sender = get_header(message, "From")
 
     sender_name, sender_email = parseaddr(sender)
@@ -165,6 +189,6 @@ def parse_email(message: dict[str, Any], account: str) -> ParsedEmail:
         sender_email     = sender_email,
         received_at      = received_at, # type: ignore
         snippet          = get_snippet(message),
-        body             = clean_email_body(get_body(message)),
+        body             = get_body(message),
         attachments      = get_attachments(message),
     )
