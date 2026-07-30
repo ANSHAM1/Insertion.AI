@@ -6,23 +6,25 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    APP_NAME           : str = "InsertionAI"
-    APP_VERSION        : str = "1.0.0"
+    APP_NAME             : str = "Insertion.AI"
+    APP_VERSION          : str = "1.0.0"
 
-    DATABASE_URL       : str
+    DATABASE_URL         : str
 
-    OPENCODE_API_KEY   : SecretStr
-    OPENROUTER_API_KEY : SecretStr
+    OPENROUTER_URL       : str
 
-    ADZUNA_APP_ID      : str = ""
-    ADZUNA_APP_KEY     : str = ""
+    OPENROUTER_API_KEY_1 : SecretStr
+    OPENROUTER_API_KEY_2 : SecretStr
+    OPENROUTER_API_KEY_3 : SecretStr
+    OPENROUTER_API_KEY_4 : SecretStr
 
-    GMAIL_SECRETS_DIR  : Path
+    ADZUNA_APP_ID        : str = ""
+    ADZUNA_APP_KEY       : str = ""
 
-    SYNC_DATA_PATH     : Path
-    SCHEDULE_PATH      : Path
+    GMAIL_SECRETS_DIR    : Path
 
-    LOG_LEVEL          : str = "INFO"
+    SYNC_DATA_PATH       : Path
+    SCHEDULE_PATH        : Path
 
     model_config = SettingsConfigDict(
         env_file = ".env",

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
@@ -19,15 +19,3 @@ class ScheduleItemOutput(BaseModel):
 
 class PlannerOutput(BaseModel):
     items           : list[ScheduleItemOutput]
-
-
-
-def validate_schedule(raw_json: str) -> Optional[PlannerOutput]:
-    try:
-        return PlannerOutput.model_validate_json(raw_json)
-
-    except ValidationError:
-        return None
-
-    except Exception:
-        return None

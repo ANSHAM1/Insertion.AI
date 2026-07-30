@@ -16,7 +16,6 @@ class PlannerState(TypedDict):
 
     app_state      : StateManager
 
-    retries_left   : int
     already_synced : bool
 
     rss_repo       : RssRepository
@@ -31,4 +30,5 @@ class PlannerState(TypedDict):
     template       : dict[str, Any]
 
     prompt         : PromptValue
-    raw_response   : str
+
+    llm_failed     : bool

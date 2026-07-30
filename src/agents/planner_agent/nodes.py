@@ -5,10 +5,10 @@ from src.database.models import DailySchedule, ScheduleItem
 
 from src.agents.planner_agent.state import PlannerState
 
-from src.prompts.planner_prompt import planner_prompt, repair_prompt
+from src.prompts.planner_prompt import planner_prompt
 
-from src.ai.llm_factor import LLMFactory
-from src.validators.planner_output import validate_schedule
+from src.ai.llm_factor import FailoverLLM
+from src.validators.planner_output import PlannerOutput
 
 from src.services.rss_service import generate_article
 
@@ -66,58 +66,30 @@ def build_prompt_node(state : PlannerState) -> dict[str, Any]:
 
 def llm_inference_node(state : PlannerState) -> dict[str, Any]:
 
-    llm = LLMFactory.planner()
+    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=PlannerOutput)
 
-    response = llm.invoke(state["prompt"])
-
-    return {
-        "raw_response": response.content
-    }
-
-
-
-def validation_node(state : PlannerState) -> dict[str, Any]:
-
-    schedule = validate_schedule(state["raw_response"])
-
-    if schedule is None:
+    if response is None:
         return {
-            "curr_schedule": None
+            "llm_failed" : True
         }
 
     return {
-        "curr_schedule": schedule
+        "curr_schedule" : response,
+        "llm_failed"   : False
     }
 
 
 
 def validation_router(state: PlannerState) -> str:
 
-    if state["curr_schedule"] is not None:
-        return "save"
-
-    if state["retries_left"] <= 0:
+    if state["llm_failed"]:
         return "failed"
 
-    return "repair"
+    return "save"
 
 
 
-def repair_prompt_node(state : PlannerState) -> dict[str, Any]:
-
-    prompt = repair_prompt.invoke({
-            "invalid_json": state["raw_response"]
-        }
-    )
-
-    return {
-        "prompt"       : prompt,
-        "retries_left" : state["retries_left"] - 1
-    }
-
-
-
-def save_schedule_node(state: PlannerState) -> dict[None, None]:
+def save_schedule_node(state: PlannerState) -> dict[str, Any]:
 
     planner_output = state["curr_schedule"]
 
@@ -149,7 +121,7 @@ def save_schedule_node(state: PlannerState) -> dict[None, None]:
 
 
 
-def article_search_node(state : PlannerState) -> dict[None, None]:
+def article_search_node(state : PlannerState) -> dict[str, Any]:
             
     now = state["app_state"].now()
     last_sync = state["app_state"].RSS_STATE()

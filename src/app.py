@@ -44,4 +44,3 @@ state : object = {
 for step in college_graph.stream(state):  # type: ignore
     print("=" * 60)
     print(step)
-

@@ -279,17 +279,7 @@ class EventRepository:
 
         return list(results) if results else None
 
-    def find_duplicate(self, id : int) -> Event | None:
-        return self.db.scalar(
-            select(Event).where(Event.id == id)
-            )
-
     def add(self, event : Event) -> bool:
-        existing = self.find_duplicate(event.id)
-
-        if existing is not None:
-            return False
-        
         self.db.add(event)
         self.db.commit()
         self.db.refresh(event)
