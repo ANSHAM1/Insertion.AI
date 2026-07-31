@@ -25,6 +25,7 @@ class Settings(BaseSettings):
 
     SYNC_DATA_PATH       : Path
     SCHEDULE_PATH        : Path
+    RESUME_PATH          : Path
 
     model_config = SettingsConfigDict(
         env_file = ".env",

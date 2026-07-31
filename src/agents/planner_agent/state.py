@@ -22,7 +22,7 @@ class PlannerState(TypedDict):
     schedule_repo  : DailyScheduleRepository
     event_repo     : EventRepository
 
-    events         : list[Event] | None
+    events         : list[Event]
 
     prev_schedule  : DailySchedule | None
     curr_schedule  : PlannerOutput | None

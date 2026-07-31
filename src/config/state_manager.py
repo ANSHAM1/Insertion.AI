@@ -64,10 +64,10 @@ class StateManager:
 
 
     def JOB_STATE(self) -> datetime | None:
-        return self._get_datetime("job", "adzuna_last_sync")
+        return self._get_datetime("job", "last_sync")
 
     def JOB_SYNC(self, now: datetime) -> None:
-        self._set_datetime(now, "job", "adzuna_last_sync")
+        self._set_datetime(now, "job", "last_sync")
 
 
 

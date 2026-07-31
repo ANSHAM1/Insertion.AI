@@ -278,6 +278,9 @@ class DailyScheduleRepository(Repository):
     def update_user_reflection(self, schedule: DailySchedule, reflection: str) -> None:
         schedule.user_reflection = reflection
 
+        self.commit()
+        self.refresh(schedule)
+
     def update_item(self, schedule_item: ScheduleItem, updates: dict[str, Any]) -> None:
         valid_fields = set(ScheduleItem.__table__.columns.keys())
 

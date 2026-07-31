@@ -145,3 +145,24 @@
             article_search
                   │
                  END
+
+
+
+                                        START
+                                        │
+                                        Search Jobs
+                                        │
+                                        No Jobs? ─────► END
+                                        │
+                                        Build Prompt
+                                        │
+                                        LLM
+                                        │
+                                        Failed? ──────► END
+                                        │
+                                        Save Results
+                                        ├── Store jobs
+                                        ├── Update AppState(JOB_SYNC)
+                                        └── Save analysis
+                                        │
+                                        END

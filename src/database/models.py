@@ -47,7 +47,7 @@ class Job(Base):
 
 
 class JobLookup(Base):
-    __tablename__ = "job_lookup"
+    __tablename__ = "job_lookups"
 
     id         : Mapped[str]      = mapped_column(String(200), primary_key=True)
     created_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -55,7 +55,7 @@ class JobLookup(Base):
 
 
 class CollegeDrive(Base):
-    __tablename__ = "jobs_college"
+    __tablename__ = "college_drives"
 
     drive_ref_id     : Mapped[str]                    = mapped_column(String(128), primary_key=True)
 
