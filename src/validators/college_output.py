@@ -14,6 +14,8 @@ class CollegeDrive(BaseModel):
     employment_type  : EmploymentType | None
     recruitment_type : RecruitmentType | None
 
+    skills           : list[str]
+
     drive_date       : date | None
     report_time      : datetime | None
 

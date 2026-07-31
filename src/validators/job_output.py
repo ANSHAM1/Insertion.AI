@@ -5,21 +5,22 @@ from src.database.enums import (EmploymentType, RecruitmentType)
 
 
 class JobAnalysis(BaseModel):
-    id                    : str
+    id                 : str
     
-    company               : str
-    role                  : str
-    description           : str | None
+    company            : str
+    role               : str
+    description        : str | None
 
-    employment_type       : EmploymentType | None
-    recruitment_type      : RecruitmentType | None
+    employment_type    : EmploymentType | None
+    recruitment_type   : RecruitmentType | None
 
-    experience_min        : int | None
+    experience_min     : int | None
 
-    missing_skills        : list[str]
+    required_skills    : list[str]
+    missing_skills     : list[str]
 
-    tailoring_suggestions : list[str]
-    reason                : str
+    matched_resume     : str
+    matched_percentage : float   
 
 
 class JobOutput(BaseModel):

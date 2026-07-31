@@ -20,17 +20,9 @@ def fetch_gmails_node(state: CollegeState) -> dict[str, Any]:
 
     emails = [
         email
-        for email in emails
-        if (
-            (
-                "register yourself" in email.subject.lower() 
-                and 
-                "reminder" not in email.subject.lower()
-            )
-            or 
-            "drive re-scheduled" in email.subject.lower()
-        )
-    ]
+        for email in emails 
+        if ("register yourself" in email.subject.lower() and "reminder" not in email.subject.lower())
+        ]
 
     return {
         "emails"         : emails,
@@ -108,6 +100,7 @@ def save_node(state: CollegeState) -> dict[str, Any]:
                     salary           = drive.salary,
                     bond             = drive.bond,
                     apply_url        = drive.apply_url,
+                    skills           = drive.skills
                 )
             )
 

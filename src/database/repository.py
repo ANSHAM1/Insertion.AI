@@ -42,8 +42,15 @@ class Repository:
 
 class JobRepository(Repository):
 
-    def get(self, job_id: int) -> Job | None:
+    def get(self, job_id: str) -> Job | None:
         return self.db.get(Job, job_id)
+
+    def get_all(self) -> list[Job]:
+        return list(self.db.scalars(
+            select(Job).order_by(
+                Job.posted_at.desc(),
+                Job.company,
+            )).all())
 
     def exists(self, job_id: str) -> bool:
         return self.db.scalar(
@@ -99,17 +106,6 @@ class CollegeDriveRepository(Repository):
 
         self.add(drive)
         return True
-
-    def update_status(self, drive: CollegeDrive) -> bool:
-        try:
-            self.db.merge(drive)
-            self.db.commit()
-            return True
-
-        except Exception:
-            self.db.rollback()
-            return False
-        
 
 
 

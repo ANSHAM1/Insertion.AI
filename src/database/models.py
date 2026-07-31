@@ -1,4 +1,4 @@
-from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text, Time)
+from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text, Time, JSON, FLOAT)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone, time
@@ -20,7 +20,6 @@ class Job(Base):
     description        : Mapped[str | None]             = mapped_column(Text, nullable=True)
     role               : Mapped[str]                    = mapped_column(String(200), index=True)
     employment_type    : Mapped[EmploymentType | None]  = mapped_column(SqlEnum(EmploymentType), nullable=True)
-
     recruitment_type   : Mapped[RecruitmentType | None] = mapped_column(SqlEnum(RecruitmentType), nullable=True)
     
     location           : Mapped[str | None]             = mapped_column(String(150), nullable=True)
@@ -29,16 +28,16 @@ class Job(Base):
     apply_url          : Mapped[str | None]             = mapped_column(String(600), nullable=True)
     experience_min     : Mapped[int | None]             = mapped_column(nullable=True)
 
-    recruiter_name     : Mapped[str | None]             = mapped_column(String(150), nullable=True)
-    recruiter_email    : Mapped[str | None]             = mapped_column(String(200), nullable=True, index=True)
-
     posted_at          : Mapped[date | None]            = mapped_column(Date, nullable=True)
     applied_at         : Mapped[date | None]            = mapped_column(Date, nullable=True)
     status             : Mapped[JobStatus]              = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
     status_date        : Mapped[date]                   = mapped_column(Date, default=lambda: datetime.now(timezone.utc).date())
 
-    resume_tailored    : Mapped[bool]                   = mapped_column(Boolean, default=False)
-    resume_path        : Mapped[str | None]             = mapped_column(String(400), nullable=True)
+    required_skills    : Mapped[list[str]]              = mapped_column(JSON, default=list, nullable=False)
+    missing_skills     : Mapped[list[str]]              = mapped_column(JSON, default=list, nullable=False)
+
+    matched_resume     : Mapped[str]                    = mapped_column(String(100), index=True)
+    matched_percentage : Mapped[float]                  = mapped_column(FLOAT, nullable=False) 
 
     created_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
@@ -76,8 +75,7 @@ class CollegeDrive(Base):
     report_time      : Mapped[time | None]            = mapped_column(Time, nullable=True)
     venue            : Mapped[str | None]             = mapped_column(String(100), nullable=True)
 
-    resume_tailored  : Mapped[bool]                   = mapped_column(Boolean, default=False)
-    resume_path      : Mapped[str | None]             = mapped_column(String(200), nullable=True)
+    skills           : Mapped[list[str]]              = mapped_column(JSON, default=list, nullable=False)
 
     created_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 

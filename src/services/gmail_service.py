@@ -42,7 +42,7 @@ def fetch_emails(account : str, history_id : str) -> tuple[list[ParsedEmail], li
 
     if history_id == "":
 
-        query = "newer_than:1d -category:promotions -category:social -in:spam -in:trash"
+        query = "newer_than:5d -category:promotions -category:social -in:spam -in:trash"
         messages = gmail_api.get_messages(query)
         latest_history_id = get_latest_history_id(messages)
         new_ids = get_ids_from(messages)

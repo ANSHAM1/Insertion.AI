@@ -15,12 +15,6 @@ from src.validators.job_output import JobOutput
 def search_jobs_node(state: JobState) -> dict[str, Any]:
 
     last_sync = state["app_state"].JOB_STATE()
-    now = state["app_state"].now()
-
-    if (last_sync and now - last_sync < state["app_state"].time_delta(1)):
-        return {
-            "jobs" : []
-        }
 
     jobs = fetch_jobs(last_sync)
 
@@ -93,23 +87,29 @@ def save_node(state: JobState) -> dict[str, Any]:
 
             state["job_repo"].add(
                 Job(
-                    id=fetched_job.id,
+                    id                 = fetched_job.id,
 
-                    company=approved.company,
-                    description=approved.description,
-                    role=approved.role,
+                    company            = approved.company,
+                    description        = approved.description,
+                    role               = approved.role,
 
-                    employment_type=approved.employment_type,
-                    recruitment_type=approved.recruitment_type,
+                    employment_type    = approved.employment_type,
+                    recruitment_type   = approved.recruitment_type,
 
-                    location=fetched_job.location,
-                    salary_min=fetched_job.salary_min,
-                    salary_max=fetched_job.salary_max,
+                    location           = fetched_job.location,
+                    salary_min         = fetched_job.salary_min,
+                    salary_max         = fetched_job.salary_max,
 
-                    apply_url=fetched_job.apply_url,
-                    experience_min=approved.experience_min,
+                    apply_url          = fetched_job.apply_url,
+                    experience_min     = approved.experience_min,
 
-                    posted_at=fetched_job.posted_at,
+                    posted_at          = fetched_job.posted_at,
+
+                    required_skills    = approved.required_skills,
+                    missing_skills     = approved.missing_skills,
+
+                    matched_resume     = approved.matched_resume,
+                    matched_percentage = approved.matched_percentage
                 )
             )
 

@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from src.config.settings import get_settings
@@ -9,12 +9,12 @@ from src.config.state_manager import StateManager
 from src.database.connection import SessionLocal
 from src.database.enums import JobStatus
 
-from src.database.repository import (DailyScheduleRepository, EventRepository, RssRepository, CollegeDriveRepository)
-from src.database.models import DailySchedule, CollegeDrive
+from src.database.repository import (DailyScheduleRepository, EventRepository, RssRepository, CollegeDriveRepository, JobRepository)
+from src.database.models import (DailySchedule, CollegeDrive, Job)
 
 from src.agents.planner_agent.workflow import planner_graph
 from src.agents.college_agent.workflow import college_graph
-
+from src.agents.job_agent.workflow import job_graph
 
 
 class InsertionAIDispatch(ABC):
@@ -68,19 +68,14 @@ class PlannerDispatch(InsertionAIDispatch):
         state : dict[str, Any] = {
             "curr_date"      : date.today(),
             "already_synced" : False,
-
             "template"       : template,
             "app_state"      : self.app_state,
-
             "events"         : [],
-
             "prev_schedule"  : None,
             "curr_schedule"  : None,
-
             "rss_repo"       : RssRepository(self.db),
             "schedule_repo"  : schedule_repo,
             "event_repo"     : EventRepository(self.db),
-
             "prompt"         : "",
             "llm_failed"     : False,
         }
@@ -125,30 +120,20 @@ class CollegeDispatch(InsertionAIDispatch):
             "items": [
                 {
                     "id"               : drive.drive_ref_id,
-
                     "company"          : drive.company,
                     "role"             : drive.role,
                     "description"      : drive.description,
-
                     "employment_type"  : (drive.employment_type.value if drive.employment_type else None),
                     "recruitment_type" : (drive.recruitment_type.value if drive.recruitment_type else None),
-
                     "location"         : drive.location,
                     "salary"           : drive.salary,
                     "bond"             : drive.bond,
-
                     "apply_url"        : drive.apply_url,
-
                     "status"           : drive.status.value,
-
                     "drive_date"       : (drive.drive_date.isoformat() if drive.drive_date else None),
-
                     "report_time"      : (drive.report_time.strftime("%H:%M") if drive.report_time else None),
-
                     "venue"            : drive.venue,
-
-                    "resume_tailored"  : drive.resume_tailored,
-                    "resume_path"      : drive.resume_path,
+                    "skills"           : drive.skills
                 }
                 for drive in sorted(drives, key=lambda x: (x.drive_date or date.max, x.company.lower()))
             ]
@@ -164,14 +149,10 @@ class CollegeDispatch(InsertionAIDispatch):
         state: dict[str, Any] = {
             "curr_date"      : date.today(),
             "app_state"      : self.app_state,
-
             "latest_hist_id" : latest_hist_id,
-
             "emails"         : [],
             "output"         : None,
-
             "drives_repo"    : repo,
-
             "prompt"         : "",
             "llm_failed"     : False,
         }
@@ -189,7 +170,7 @@ class CollegeDispatch(InsertionAIDispatch):
             raise ValueError(f"Drive '{drive_ref_id}' not found.")
 
         drive.status = JobStatus(status)
-        repo.update_status(drive)
+        repo.commit()
 
     def remove_drive(self, drive_ref_id: str) -> None:
         repo = CollegeDriveRepository(self.db)
@@ -201,6 +182,100 @@ class CollegeDispatch(InsertionAIDispatch):
 
         repo.delete(drive)
         repo.commit()
+
+
+
+class JobDispatch(InsertionAIDispatch):
+
+    def _helper(self, jobs: list[Job]) -> dict[str, Any]:
+
+        if not jobs:
+            return {"items": []}
+
+        return {
+            "items": [
+                {
+                    "id"                 : job.id,
+                    "company"            : job.company,
+                    "role"               : job.role,
+                    "description"        : job.description,
+                    "employment_type"    : (job.employment_type.value if job.employment_type else None),
+                    "recruitment_type"   : (job.recruitment_type.value if job.recruitment_type else None),
+                    "location"           : job.location,
+                    "salary_min"         : job.salary_min,
+                    "salary_max"         : job.salary_max,
+                    "apply_url"          : job.apply_url,
+                    "experience_min"     : job.experience_min,
+                    "posted_at"          : (job.posted_at.isoformat() if job.posted_at else None),
+                    "applied_at"         : (job.applied_at.isoformat() if job.applied_at else None),
+                    "status"             : job.status.value,
+                    "status_date"        : (job.status_date.isoformat() if job.status_date else None),
+                    "required_skills"    : job.required_skills,
+                    "missing_skills"     : job.missing_skills,
+                    "matched_resume"     : job.matched_resume,
+                    "matched_percentage" : job.matched_percentage
+                }
+                for job in sorted(jobs, key=lambda x: (x.posted_at or date.max, x.company.lower()))
+            ]
+        }  # type: ignore 
+
+    def invoke(self):
+
+        repo = JobRepository(self.db)
+
+        state: dict[str, Any] = {
+            "curr_date": date.today(),
+            "timestamp": datetime.now(),
+
+            "resume": {},
+
+            "app_state": self.app_state,
+
+            "jobs": [],
+            "output": None,
+
+            "job_repo": repo,
+
+            "prompt": "",
+            "llm_failed": False,
+        }
+
+        job_graph.invoke(state)  # type: ignore
+        return self._helper(repo.get_all())
+
+    def update_status(self, job_id: str, status: str) -> None:
+
+        repo = JobRepository(self.db)
+
+        job = repo.get(job_id)
+
+        if job is None:
+            raise ValueError(f"Job '{job_id}' not found.")
+
+        job.applied_at = date.today()
+        job.status = JobStatus(status)
+        job.status_date = date.today()
+        repo.commit()
+
+    def remove_job(self, job_id: str) -> None:
+
+        repo = JobRepository(self.db)
+
+        job = repo.get(job_id)
+
+        if job is None:
+            raise ValueError(f"Job '{job_id}' not found.")
+
+        repo.delete(job)
+        repo.commit()
+
+    def refresh_jobs(self) -> dict[str, Any]:
+
+        repo = JobRepository(self.db)
+
+        return self._helper(repo.get_all())
+
+        
 
 
 
@@ -256,6 +331,34 @@ def college(command: str, payload: dict[Any, Any]):
     finally:
         app.close()
 
+
+def job(command: str, payload: dict[Any, Any]):
+    app = JobDispatch()
+
+    try:
+        if command == "job":
+            return app.invoke()
+
+        elif command == "job_status":
+            app.update_status(
+                payload["id"],
+                payload["status"],
+            )
+            return None
+
+        elif command == "job_remove":
+            app.remove_job(
+                payload["id"],
+            )
+            return None
+
+        elif command == "job_refresh":
+            return app.refresh_jobs()
+
+        raise ValueError(f"Unknown college command: {command}")
+
+    finally:
+        app.close()
 
 
 
