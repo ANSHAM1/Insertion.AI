@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone, time
 
-from .enums import (EmailAccount, EmploymentType, JobStatus, RecruitmentType, EventType, EventSource)
+from .enums import (EmploymentType, JobStatus, RecruitmentType)
 
 
 
@@ -80,73 +80,6 @@ class CollegeDrive(Base):
     created_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
                                                                         onupdate=lambda: datetime.now(timezone.utc))
-
-
-
-class Email(Base):
-    __tablename__ = "emails"
-
-    gmail_message_id : Mapped[str]              = mapped_column(String(128), primary_key=True)
-    account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount), primary_key=True)
-
-    gmail_thread_id  : Mapped[str]              = mapped_column(String(128), index=True)
-
-    detected_status  : Mapped[JobStatus | None] = mapped_column(SqlEnum(JobStatus), nullable=True, index=True)
-
-    subject          : Mapped[str | None]       = mapped_column(String(300), nullable=True)
-    sender_name      : Mapped[str | None]       = mapped_column(String(250), nullable=True)
-    sender_email     : Mapped[str]              = mapped_column(String(250))
-    received_at      : Mapped[datetime]         = mapped_column(DateTime(timezone=True), index=True)
-
-    summary          : Mapped[str | None]       = mapped_column(String(1000), nullable=True)
-    
-    created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-
-
-class FollowUpEmail(Base):
-    __tablename__ = "follow_up_emails"
-
-    gmail_message_id : Mapped[str]              = mapped_column(String(128), primary_key=True)
-    account          : Mapped[EmailAccount]     = mapped_column(SqlEnum(EmailAccount), primary_key=True)
-
-    gmail_thread_id  : Mapped[str]              = mapped_column(String(128), index=True)
-
-    detected_status  : Mapped[JobStatus | None] = mapped_column(SqlEnum(JobStatus), nullable=True, index=True)
-
-    subject          : Mapped[str | None]       = mapped_column(String(300), nullable=True)
-    sender_name      : Mapped[str | None]       = mapped_column(String(250), nullable=True)
-    sender_email     : Mapped[str]              = mapped_column(String(250))
-    received_at      : Mapped[datetime]         = mapped_column(DateTime(timezone=True), index=True)
-
-    ai_processed     : Mapped[bool]             = mapped_column(Boolean, default=False)
-    summary          : Mapped[str | None]       = mapped_column(String(1000), nullable=True)
-
-    job_id           : Mapped[str | None]       = mapped_column(String(300), nullable=True)
-    
-    created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-
-
-class Event(Base):
-    __tablename__ = "events"
-
-    id            : Mapped[int]             = mapped_column(primary_key=True)
-
-    title         : Mapped[str]             = mapped_column(String(250))
-    description   : Mapped[str | None]      = mapped_column(String(1000), nullable=True)
-
-    event_type    : Mapped[EventType]       = mapped_column(SqlEnum(EventType), index=True)
-
-    start_time    : Mapped[datetime]        = mapped_column(DateTime(timezone=True))
-    end_time      : Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
-    completed     : Mapped[bool]            = mapped_column(Boolean, default=False, index=True)
-
-    source        : Mapped[EventSource]     = mapped_column(SqlEnum(EventSource))
-
-    created_at    : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at    : Mapped[datetime]        = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 
 

@@ -1,10 +1,10 @@
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from datetime import datetime, time, timedelta, date
+from datetime import date
 from typing import Any
 from collections.abc import Iterable
 
-from src.database.models import Job, JobLookup, ReadingArticle, Email, FollowUpEmail, Event, DailySchedule, ScheduleItem, CollegeDrive
+from src.database.models import Job, JobLookup, ReadingArticle, DailySchedule, ScheduleItem, CollegeDrive
 
 
 
@@ -149,114 +149,6 @@ class RssRepository(Repository):
 
         self.add(article)
         return True
-
-
-
-class GmailRepository(Repository):
-
-    def get(self, id: int) -> Email | None:
-        return self.db.get(Email, id)
-
-    def find_duplicate(self, gmail_message_id: str, account: str) -> Email | None:
-        return self.db.scalar(
-            select(Email).where(
-                and_(
-                    Email.gmail_message_id == gmail_message_id,
-                    Email.account == account,
-                )))
-
-    def add_if_not_exists(self, email: Email) -> bool:
-        if self.find_duplicate(email.gmail_message_id, email.account):
-            return False
-
-        self.add(email)
-        return True
-
-    def filter_new_emails(self, message_ids: list[str]) -> list[str]:
-        if not message_ids:
-            return []
-
-        existing = set(
-            self.db.scalars(
-                select(Email.gmail_message_id).where(
-                    Email.gmail_message_id.in_(message_ids)
-                )).all()
-            )
-
-        return [message_id for message_id in message_ids if message_id not in existing]
-
-
-
-class FollowUpRepository(Repository):
-
-    def get(self, id: int) -> FollowUpEmail | None:
-        return self.db.get(FollowUpEmail, id)
-
-    def find_duplicate_message(self, gmail_message_id: str, account: str) -> FollowUpEmail | None:
-        return self.db.scalar(
-            select(FollowUpEmail).where(
-                and_(
-                    FollowUpEmail.gmail_message_id == gmail_message_id,
-                    FollowUpEmail.account == account,
-                )))
-
-    def find_duplicate_thread(self, thread_id: str, account: str) -> FollowUpEmail | None:
-        return self.db.scalar(
-            select(FollowUpEmail).where(
-                and_(
-                    FollowUpEmail.gmail_thread_id == thread_id,
-                    FollowUpEmail.account == account,
-                )))
-
-    def add_if_not_exists(self, email: FollowUpEmail) -> bool:
-        if self.find_duplicate_message(email.gmail_message_id, email.account):
-            return False
-
-        self.add(email)
-        return True
-
-    def filter_new_emails(self, message_ids: list[str]) -> list[str]:
-        if not message_ids:
-            return []
-
-        existing = set(
-            self.db.scalars(
-                select(FollowUpEmail.gmail_message_id).where(
-                    FollowUpEmail.gmail_message_id.in_(message_ids)
-                )).all()
-            )
-
-        return [message_id for message_id in message_ids if message_id not in existing]
-
-
-
-class EventRepository(Repository):
-
-    def get(self, id: int) -> Event | None:
-        return self.db.get(Event, id)
-
-    def get_events(self, date: date) -> list[Event]:
-        day_start = datetime.combine(date, time.min)
-        day_end = day_start + timedelta(days=1)
-
-        return list(
-            self.db.scalars(
-                select(Event).where(
-                    Event.completed == False,
-                    Event.start_time < day_end,
-                    Event.end_time >= day_start,
-                )).all()
-            )
-
-    def update(self, event: Event, updates: dict[str, Any]) -> None:
-        valid_fields = set(Event.__table__.columns.keys())
-
-        for field, value in updates.items():
-            if field in valid_fields and value is not None:
-                setattr(event, field, value)
-
-        self.commit()
-        self.refresh(event)
 
 
 

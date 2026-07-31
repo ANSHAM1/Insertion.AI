@@ -4,8 +4,8 @@ from langchain_core.prompt_values import PromptValue
 
 from src.config.state_manager import StateManager
 
-from src.database.models import Event, DailySchedule
-from src.database.repository import RssRepository, DailyScheduleRepository, EventRepository
+from src.database.models import DailySchedule
+from src.database.repository import RssRepository, DailyScheduleRepository
 
 from src.validators.planner_output import PlannerOutput
 
@@ -20,9 +20,6 @@ class PlannerState(TypedDict):
 
     rss_repo       : RssRepository
     schedule_repo  : DailyScheduleRepository
-    event_repo     : EventRepository
-
-    events         : list[Event]
 
     prev_schedule  : DailySchedule | None
     curr_schedule  : PlannerOutput | None

@@ -74,7 +74,6 @@ class AdzunaProvider:
                             company=item["company"]["display_name"].strip(),
                             role=item["title"].strip(),
                             description=item["description"],
-                            category=item["category"]["label"],
                             employment_type=item.get("contract_type", ""),
                             location=item["location"]["display_name"],
                             salary_min=float(item.get("salary_min", 0)),

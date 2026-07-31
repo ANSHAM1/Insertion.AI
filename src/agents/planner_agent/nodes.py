@@ -26,13 +26,11 @@ def load_context_node(state : PlannerState) -> dict[str, Any]:
         }
 
     schedule_repo = state["schedule_repo"]
-    event_repo    = state["event_repo"]
 
     prev_day_date = state["curr_date"] - timedelta(days=1)
 
     return {
         "prev_schedule"  : schedule_repo.get_schedule(prev_day_date),
-        "events"         : event_repo.get_events(state["curr_date"]),
         "already_synced" : False
     }
 
@@ -53,8 +51,7 @@ def build_prompt_node(state : PlannerState) -> dict[str, Any]:
             "today_date": state["curr_date"],
             "current_time": state["app_state"].now(),
             "daily_template": state["template"],
-            "yesterday_schedule": state["prev_schedule"],
-            "today_events": state["events"]
+            "yesterday_schedule": state["prev_schedule"]
         }
     )
 
