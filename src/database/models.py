@@ -173,10 +173,9 @@ class ScheduleItem(Base):
 
     title           : Mapped[str]             = mapped_column(String(150))
 
-    start_time      : Mapped[datetime]        = mapped_column(DateTime(timezone=True))
-    end_time        : Mapped[datetime]        = mapped_column(DateTime(timezone=True))
+    start_time      : Mapped[time]            = mapped_column(Time)
+    end_time        : Mapped[time]            = mapped_column(Time)
 
-    sort_order      : Mapped[int]             = mapped_column()
     completed       : Mapped[bool]            = mapped_column(Boolean, default=False)
 
     note            : Mapped[str | None]      = mapped_column(String(500), nullable=True)

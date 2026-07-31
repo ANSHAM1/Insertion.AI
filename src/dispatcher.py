@@ -7,11 +7,13 @@ from src.config.settings import get_settings
 from src.config.state_manager import StateManager
 
 from src.database.connection import SessionLocal
+from src.database.enums import JobStatus
 
-from src.database.repository import (DailyScheduleRepository, EventRepository, RssRepository)
-from src.database.models import DailySchedule
+from src.database.repository import (DailyScheduleRepository, EventRepository, RssRepository, CollegeDriveRepository)
+from src.database.models import DailySchedule, CollegeDrive
 
 from src.agents.planner_agent.workflow import planner_graph
+from src.agents.college_agent.workflow import college_graph
 
 
 
@@ -23,7 +25,7 @@ class InsertionAIDispatch(ABC):
         self.app_state = StateManager()
 
     @abstractmethod
-    def invoke(self):
+    def invoke(self) -> dict[str, Any]:
         pass
 
     def close(self):
@@ -40,14 +42,14 @@ class PlannerDispatch(InsertionAIDispatch):
         return {
             "items": [
                 {
+                    "id"         : item.id,
                     "title"      : item.title,
                     "start_time" : item.start_time.strftime("%H:%M"),
                     "end_time"   : item.end_time.strftime("%H:%M"),
-                    "sort_order" : item.sort_order,
                     "completed"  : item.completed,
                     "note"       : item.note,
                 }
-                for item in sorted(data.items, key=lambda x: x.sort_order)
+                for item in sorted(data.items, key=lambda x: x.id)
             ]
         } # type: ignore
 
@@ -83,9 +85,8 @@ class PlannerDispatch(InsertionAIDispatch):
             "llm_failed"     : False,
         }
 
-        result = planner_graph.invoke(state) # type: ignore
-
-        return self._helper(result["curr_schedule"])
+        planner_graph.invoke(state) # type: ignore
+        return self._helper(schedule_repo.get_schedule(date.today()))
 
     def update_item(self, task_id : int, completed: bool):
 
@@ -95,7 +96,7 @@ class PlannerDispatch(InsertionAIDispatch):
         if schedule is None:
             raise ValueError("Schedule not found.")
 
-        task = next((item for item in schedule.items if item.sort_order == task_id), None)
+        task = next((item for item in schedule.items if item.id == task_id), None)
         if task is None:
             raise ValueError("Task not found.")
 
@@ -113,36 +114,166 @@ class PlannerDispatch(InsertionAIDispatch):
 
 
 
-def planner(_ : dict[Any, Any]):
+class CollegeDispatch(InsertionAIDispatch):
+
+    def _helper(self, drives: list[CollegeDrive]) -> dict[str, Any]:
+
+        if not drives:
+            return {"items": []}
+
+        return {
+            "items": [
+                {
+                    "id"               : drive.drive_ref_id,
+
+                    "company"          : drive.company,
+                    "role"             : drive.role,
+                    "description"      : drive.description,
+
+                    "employment_type"  : (drive.employment_type.value if drive.employment_type else None),
+                    "recruitment_type" : (drive.recruitment_type.value if drive.recruitment_type else None),
+
+                    "location"         : drive.location,
+                    "salary"           : drive.salary,
+                    "bond"             : drive.bond,
+
+                    "apply_url"        : drive.apply_url,
+
+                    "status"           : drive.status.value,
+
+                    "drive_date"       : (drive.drive_date.isoformat() if drive.drive_date else None),
+
+                    "report_time"      : (drive.report_time.strftime("%H:%M") if drive.report_time else None),
+
+                    "venue"            : drive.venue,
+
+                    "resume_tailored"  : drive.resume_tailored,
+                    "resume_path"      : drive.resume_path,
+                }
+                for drive in sorted(drives, key=lambda x: (x.drive_date or date.max, x.company.lower()))
+            ]
+        } # type: ignore
+
+    def invoke(self):
+
+        repo = CollegeDriveRepository(self.db)
+
+        latest_hist_id = self.app_state.GMAIL_STATE("college")
+    
+
+        state: dict[str, Any] = {
+            "curr_date"      : date.today(),
+            "app_state"      : self.app_state,
+
+            "latest_hist_id" : latest_hist_id,
+
+            "emails"         : [],
+            "output"         : None,
+
+            "drives_repo"    : repo,
+
+            "prompt"         : "",
+            "llm_failed"     : False,
+        }
+
+        college_graph.invoke(state)# type: ignore
+        return self._helper(repo.get_all())
+
+    def update_status(self, drive_ref_id: str, status: str) -> None:
+
+        repo = CollegeDriveRepository(self.db)
+
+        drive = repo.get(drive_ref_id)
+
+        if drive is None:
+            raise ValueError(f"Drive '{drive_ref_id}' not found.")
+
+        drive.status = JobStatus(status)
+        repo.update_status(drive)
+
+    def remove_drive(self, drive_ref_id: str) -> None:
+        repo = CollegeDriveRepository(self.db)
+
+        drive = repo.get(drive_ref_id)
+
+        if drive is None:
+            raise ValueError(f"Drive '{drive_ref_id}' not found.")
+
+        repo.delete(drive)
+        repo.commit()
+
+
+
+
+def planner(command: str, payload: dict[Any, Any]):
     app = PlannerDispatch()
 
     try:
-        return app.invoke()
+        if command == "planner":
+            return app.invoke()
+
+        elif command == "planner_complete":
+            app.update_item(
+                payload["id"],
+                payload["completed"],
+            )
+            return None
+
+        elif command == "planner_reflection":
+            app.save_reflection(
+                payload["reflection"],
+            )
+            return None
+
+        raise ValueError(f"Unknown planner command: {command}")
+
     finally:
         app.close()
 
 
-def planner_complete(payload : dict[Any, Any]):
-
-    app = PlannerDispatch()
+def college(command: str, payload: dict[Any, Any]):
+    app = CollegeDispatch()
 
     try:
-        app.update_item(payload["id"], payload["completed"])
-        return None
+        if command == "college":
+            return app.invoke()
+
+        elif command == "college_status":
+            app.update_status(
+                payload["drive_ref_id"],
+                payload["status"],
+            )
+            return None
+
+        elif command == "college_remove":
+            app.remove_drive(
+                payload["drive_ref_id"],
+            )
+            return None
+
+        raise ValueError(f"Unknown college command: {command}")
 
     finally:
         app.close()
 
-def planner_reflection(payload : dict[Any, Any]):
 
-    app = PlannerDispatch()
 
-    try:
-        app.save_reflection(payload["reflection"])
-        return None
 
-    finally:
-        app.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # from datetime import date, datetime
 # import json

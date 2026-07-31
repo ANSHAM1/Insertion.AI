@@ -105,8 +105,7 @@ def save_schedule_node(state: PlannerState) -> dict[str, Any]:
                 title=item.title,
                 start_time=item.start_time,
                 end_time=item.end_time,
-                sort_order=item.sort_order,
-                completed=item.completed,
+                completed=False,
                 note=item.note,
             )
         )

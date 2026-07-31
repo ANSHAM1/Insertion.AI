@@ -1,12 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 
+
 export async function generatePlanner() {
   const result = await invoke("run_python", {
     command: "planner",
   });
 
   return result.items.map((item) => ({
-    id: item.sort_order,
+    id: item.id,
     title: item.title,
     time: `${item.start_time} - ${item.end_time}`,
     startTime: item.start_time,
@@ -34,3 +35,4 @@ export async function saveReflection(reflection) {
     },
   });
 }
+

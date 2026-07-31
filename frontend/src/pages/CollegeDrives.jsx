@@ -1,101 +1,134 @@
 import { useState } from "react";
-import { Search, MapPin, Building2, Calendar, GraduationCap, Users } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+
+import {
+  Search,
+  MapPin,
+  Building2,
+  Calendar,
+  GraduationCap,
+  Users,
+} from "lucide-react";
+
 import PageTitle from "../components/PageTitle.jsx";
 import Modal from "../components/Modal.jsx";
 
-const drives = [
-  {
-    id: 1,
-    company: "TCS",
-    role: "Software Engineer Trainee",
-    college: "State University",
-    driveDate: "Aug 8",
-    eligibility: "B.Tech CSE/IT, 60%+",
-    package: "₹4.5 LPA",
-    status: "Registered",
-    seats: 40,
-  },
-  {
-    id: 2,
-    company: "Infosys",
-    role: "Systems Engineer",
-    college: "State University",
-    driveDate: "Aug 12",
-    eligibility: "Any branch, no backlogs",
-    package: "₹3.6 LPA",
-    status: "Open",
-    seats: 60,
-  },
-  {
-    id: 3,
-    company: "Amazon",
-    role: "SDE Intern",
-    college: "Metro Institute of Technology",
-    driveDate: "Aug 15",
-    eligibility: "B.Tech CSE, 75%+",
-    package: "₹12 LPA",
-    status: "Open",
-    seats: 8,
-  },
-  {
-    id: 4,
-    company: "Wipro",
-    role: "Project Engineer",
-    college: "State University",
-    driveDate: "Aug 3",
-    eligibility: "B.Tech/B.E, 60%+",
-    package: "₹3.5 LPA",
-    status: "Closed",
-    seats: 30,
-  },
-];
+import { useApp } from "../context/AppContext.jsx";
 
 const statusStyles = {
-  Open: "bg-success/10 text-success",
-  Registered: "bg-accent-soft text-accent",
-  Closed: "bg-text-muted/10 text-text-muted",
+  FOUND: "bg-success/10 text-success",
+  REGISTERED: "bg-accent-soft text-accent",
+  APPLIED: "bg-accent-soft text-accent",
+  SHORTLISTED: "bg-warning/10 text-warning",
+  INTERVIEW: "bg-warning/10 text-warning",
+  OFFERED: "bg-success/10 text-success",
+  REJECTED: "bg-error/10 text-error",
+  EXPIRED: "bg-text-muted/10 text-text-muted",
 };
 
-function DriveDetailModal({ drive, onClose }) {
+function Row({ title, value }) {
+  if (value === null || value === undefined || value === "") return null;
+
+  return (
+    <div className="flex justify-between gap-5 border-b border-border py-2 text-sm">
+      <span className="font-medium text-text-secondary">{title}</span>
+      <span className="text-right text-text-primary whitespace-pre-wrap">
+        {String(value)}
+      </span>
+    </div>
+  );
+}
+
+function DriveDetailModal({ drive, onClose, onDelete, onStatusChange }) {
   return (
     <Modal title={`${drive.role} — ${drive.company}`} onClose={onClose}>
-      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[drive.status]}`}>
+      <span
+        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+          statusStyles[drive.status] ?? "bg-text-muted/10 text-text-muted"
+        }`}
+      >
         {drive.status}
       </span>
 
-      <div className="mt-5 flex flex-col gap-3 text-sm">
-        <div className="flex items-center gap-2 text-text-secondary">
-          <Building2 size={15} className="text-text-muted" />
-          {drive.company}
-        </div>
-        <div className="flex items-center gap-2 text-text-secondary">
-          <GraduationCap size={15} className="text-text-muted" />
-          {drive.college}
-        </div>
-        <div className="flex items-center gap-2 text-text-secondary">
-          <Calendar size={15} className="text-text-muted" />
-          Drive on {drive.driveDate}
-        </div>
-        <div className="flex items-center gap-2 text-text-secondary">
-          <Users size={15} className="text-text-muted" />
-          {drive.seats} seats
-        </div>
+      <div className="mt-5 space-y-1">
+        <Row title="Company" value={drive.company} />
+        <Row title="Role" value={drive.role} />
+        <Row title="Description" value={drive.description} />
+
+        <Row title="Employment Type" value={drive.employment_type} />
+
+        <Row title="Recruitment Type" value={drive.recruitment_type} />
+
+        <Row title="Location" value={drive.location} />
+
+        <Row title="Salary" value={drive.salary} />
+
+        <Row
+          title="Bond"
+          value={drive.bond != null ? `${drive.bond} months` : null}
+        />
+
+        <Row title="Status" value={drive.status} />
+
+        <Row title="Drive Date" value={drive.drive_date} />
+
+        <Row title="Report Time" value={drive.report_time} />
+
+        <Row title="Venue" value={drive.venue} />
+
+        <Row
+          title="Resume Tailored"
+          value={drive.resume_tailored ? "Yes" : "No"}
+        />
+
+        <Row title="Resume Path" value={drive.resume_path} />
+
+        <Row title="Created" value={drive.created_at} />
+
+        <Row title="Updated" value={drive.updated_at} />
+
+        {drive.apply_url && (
+          <div className="border-b border-border py-2">
+            <div className="mb-2 text-sm font-medium text-text-secondary">
+              Apply Link
+            </div>
+
+            <button
+              onClick={async () => {
+                if (!drive.apply_url) return;
+
+                const url = drive.apply_url.startsWith("http")
+                  ? drive.apply_url
+                  : `https://${drive.apply_url}`;
+
+                await openUrl(url);
+              }}
+              className="text-sm text-accent underline break-all"
+            >
+              {drive.apply_url}
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="mt-5">
-        <h3 className="text-sm font-semibold text-text-primary">Eligibility</h3>
-        <p className="mt-2 text-sm text-text-secondary">{drive.eligibility}</p>
-      </div>
+      <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <button
+          onClick={() => onStatusChange(drive.id, "APPLIED")}
+          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-surface-hover"
+        >
+          Apply
+        </button>
 
-      <div className="mt-5">
-        <h3 className="text-sm font-semibold text-text-primary">Package</h3>
-        <p className="mt-2 text-sm text-text-secondary">{drive.package}</p>
-      </div>
+        <button
+          onClick={() => onDelete(drive.id)}
+          className="rounded-lg border border-red-500 px-4 py-2 text-sm text-red-500 hover:bg-red-500/10"
+        >
+          Remove
+        </button>
 
-      <div className="mt-6 flex justify-end">
         <button
           onClick={onClose}
-          className="rounded-lg border border-border px-4 py-2 text-sm text-text-secondary transition-colors duration-150 hover:bg-surface-hover"
+          className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-surface-hover"
         >
           Close
         </button>
@@ -108,19 +141,106 @@ export default function CollegeDrives() {
   const [search, setSearch] = useState("");
   const [selectedDrive, setSelectedDrive] = useState(null);
 
-  const filteredDrives = drives.filter((drive) =>
-    `${drive.company} ${drive.role} ${drive.college}`.toLowerCase().includes(search.toLowerCase())
-  );
+  const {
+    collegeDrives,
+    collegeLoaded,
+    collegeLoading,
+    updateDriveStatus,
+    deleteDrive,
+  } = useApp();
+
+  async function updateStatus(driveId, status) {
+    try {
+      await updateDriveStatus(driveId, status);
+
+      if (selectedDrive?.id === driveId) {
+        setSelectedDrive((prev) => ({
+          ...prev,
+          status,
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function removeDrive(driveId) {
+    if (!window.confirm("Remove this drive?")) return;
+
+    try {
+      await deleteDrive(driveId);
+      setSelectedDrive(null);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const filteredDrives = [...collegeDrives]
+    .sort((a, b) => {
+      if (!a.drive_date && !b.drive_date)
+        return a.company.localeCompare(b.company);
+
+      if (!a.drive_date) return 1;
+      if (!b.drive_date) return -1;
+
+      return new Date(a.drive_date) - new Date(b.drive_date);
+    })
+    .filter((drive) =>
+      [
+        drive.company,
+        drive.role,
+        drive.location,
+        drive.salary,
+        drive.status,
+        drive.venue,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    );
+
+  if (collegeLoading) {
+    return (
+      <div>
+        <PageTitle
+          title="College Drives"
+          subtitle="Placement drives happening on campus"
+        />
+
+        <p className="py-8 text-center text-text-muted">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!collegeLoaded) {
+    return (
+      <div>
+        <PageTitle
+          title="College Drives"
+          subtitle="Placement drives happening on campus"
+        />
+
+        <p className="py-8 text-center text-text-muted">
+          Refresh the dashboard to sync college drives.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <PageTitle title="College Drives" subtitle="Placement drives happening on campus" />
+      <PageTitle
+        title="College Drives"
+        subtitle="Placement drives happening on campus"
+      />
 
       <div className="relative mb-5 w-full sm:w-80">
         <Search
           size={16}
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
         />
+
         <input
           type="text"
           value={search}
@@ -139,10 +259,21 @@ export default function CollegeDrives() {
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-text-primary">{drive.company}</p>
-                <p className="mt-0.5 text-xs text-text-secondary">{drive.role}</p>
+                <p className="text-sm font-semibold text-text-primary">
+                  {drive.company}
+                </p>
+
+                <p className="mt-0.5 text-xs text-text-secondary">
+                  {drive.role}
+                </p>
               </div>
-              <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[drive.status]}`}>
+
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  statusStyles[drive.status] ??
+                  "bg-text-muted/10 text-text-muted"
+                }`}
+              >
                 {drive.status}
               </span>
             </div>
@@ -150,15 +281,17 @@ export default function CollegeDrives() {
             <div className="mt-4 flex flex-col gap-1.5 text-xs text-text-muted">
               <div className="flex items-center gap-1.5">
                 <GraduationCap size={13} />
-                {drive.college}
+                {drive.location ?? drive.venue ?? "-"}
               </div>
+
               <div className="flex items-center gap-1.5">
                 <Calendar size={13} />
-                {drive.driveDate}
+                {drive.drive_date ?? "TBA"}
               </div>
+
               <div className="flex items-center gap-1.5">
                 <MapPin size={13} />
-                {drive.package}
+                {drive.salary ?? "Salary not specified"}
               </div>
             </div>
           </button>
@@ -171,7 +304,14 @@ export default function CollegeDrives() {
         )}
       </div>
 
-      {selectedDrive && <DriveDetailModal drive={selectedDrive} onClose={() => setSelectedDrive(null)} />}
+      {selectedDrive && (
+        <DriveDetailModal
+          drive={selectedDrive}
+          onClose={() => setSelectedDrive(null)}
+          onDelete={removeDrive}
+          onStatusChange={updateStatus}
+        />
+      )}
     </div>
   );
 }

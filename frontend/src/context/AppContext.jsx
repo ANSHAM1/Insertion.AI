@@ -1,17 +1,39 @@
 import { createContext, useContext, useState } from "react";
 
-import { generatePlanner } from "../apis/planner";
+import {
+  generatePlanner,
+  completeTask,
+  saveReflection,
+} from "../apis/planner";
+
+import {
+  extractCollegeDrives,
+  removeCollegeDrive,
+  updateCollegeDriveStatus,
+} from "../apis/college";
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  // Planner
+  // ---------------- Planner ----------------
+
   const [plannerTasks, setPlannerTasks] = useState([]);
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [plannerLoaded, setPlannerLoaded] = useState(false);
 
-  // Global
+  // ---------------- College ----------------
+
+  const [collegeDrives, setCollegeDrives] = useState([]);
+  const [collegeLoading, setCollegeLoading] = useState(false);
+  const [collegeLoaded, setCollegeLoaded] = useState(false);
+
+  // ---------------- Global ----------------
+
   const [lastRefresh, setLastRefresh] = useState(null);
+
+  // ===========================================================
+  // Planner
+  // ===========================================================
 
   async function refreshPlanner() {
     setPlannerLoading(true);
@@ -26,8 +48,105 @@ export function AppProvider({ children }) {
     }
   }
 
+  async function updatePlannerTask(taskId, completed) {
+    // optimistic update
+    setPlannerTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              completed,
+            }
+          : task,
+      ),
+    );
+
+    try {
+      await completeTask(taskId, completed);
+    } catch (err) {
+      // rollback
+      setPlannerTasks((prev) =>
+        prev.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                completed: !completed,
+              }
+            : task,
+        ),
+      );
+
+      throw err;
+    }
+  }
+
+  async function savePlannerReflection(reflection) {
+    await saveReflection(reflection);
+  }
+
+  // ===========================================================
+  // College
+  // ===========================================================
+
+  async function refreshCollege() {
+    setCollegeLoading(true);
+
+    try {
+      const drives = await extractCollegeDrives();
+
+      setCollegeDrives(drives);
+      setCollegeLoaded(true);
+    } finally {
+      setCollegeLoading(false);
+    }
+  }
+
+  async function updateDriveStatus(driveId, status) {
+    const previous = [...collegeDrives];
+
+    setCollegeDrives((prev) =>
+      prev.map((drive) =>
+        drive.id === driveId
+          ? {
+              ...drive,
+              status,
+            }
+          : drive,
+      ),
+    );
+
+    try {
+      await updateCollegeDriveStatus(driveId, status);
+    } catch (err) {
+      setCollegeDrives(previous);
+      throw err;
+    }
+  }
+
+  async function deleteDrive(driveId) {
+    const previous = [...collegeDrives];
+
+    setCollegeDrives((prev) =>
+      prev.filter((drive) => drive.id !== driveId),
+    );
+
+    try {
+      await removeCollegeDrive(driveId);
+    } catch (err) {
+      setCollegeDrives(previous);
+      throw err;
+    }
+  }
+
+  // ===========================================================
+  // Global
+  // ===========================================================
+
   async function refreshAll() {
-    await refreshPlanner();
+    await Promise.all([
+      refreshPlanner(),
+      refreshCollege(),
+    ]);
 
     setLastRefresh(new Date());
   }
@@ -35,15 +154,26 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider
       value={{
+        // Planner
         plannerTasks,
-        setPlannerTasks,
-
         plannerLoading,
         plannerLoaded,
 
         refreshPlanner,
-        refreshAll,
+        updatePlannerTask,
+        savePlannerReflection,
 
+        // College
+        collegeDrives,
+        collegeLoading,
+        collegeLoaded,
+
+        refreshCollege,
+        updateDriveStatus,
+        deleteDrive,
+
+        // Global
+        refreshAll,
         lastRefresh,
       }}
     >

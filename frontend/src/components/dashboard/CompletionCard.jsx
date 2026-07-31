@@ -1,11 +1,16 @@
 import DashboardCard from "./DashboardCard";
+import { useApp } from "../../context/AppContext.jsx";
 
-export default function CompletionCard({ completed = 5, total = 7 }) {
+export default function CompletionCard() {
+  const { plannerTasks } = useApp();
+
+  const total = plannerTasks.length;
+  const completed = plannerTasks.filter((task) => task.completed).length;
+
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
   const radius = 46;
   const circumference = 2 * Math.PI * radius;
-
   const offset = circumference - (percent / 100) * circumference;
 
   return (
@@ -65,7 +70,7 @@ export default function CompletionCard({ completed = 5, total = 7 }) {
             <div className="text-xs text-text-muted">Remaining</div>
 
             <div className="mt-2 text-2xl font-bold text-text-primary">
-              {total - completed}
+              {Math.max(total - completed, 0)}
             </div>
           </div>
         </div>

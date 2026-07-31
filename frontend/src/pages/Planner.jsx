@@ -3,8 +3,6 @@ import { NotebookPen } from "lucide-react";
 
 import PageTitle from "../components/PageTitle.jsx";
 
-import { completeTask, saveReflection } from "../apis/planner.js";
-
 import { useApp } from "../context/AppContext";
 
 function TaskCard({ task, onToggle }) {
@@ -56,8 +54,13 @@ function TaskCard({ task, onToggle }) {
 }
 
 export default function Planner() {
-  const { plannerTasks, setPlannerTasks, plannerLoading, plannerLoaded } =
-    useApp();
+  const {
+    plannerTasks,
+    plannerLoading,
+    plannerLoaded,
+    updatePlannerTask,
+    savePlannerReflection,
+  } = useApp();
 
   const [reflection, setReflection] = useState("");
   const [saved, setSaved] = useState(false);
@@ -67,29 +70,20 @@ export default function Planner() {
 
     if (!task) return;
 
-    const completed = !task.completed;
-
-    setPlannerTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed } : t)),
-    );
-
     try {
-      await completeTask(id, completed);
+      await updatePlannerTask(id, !task.completed);
     } catch (err) {
       console.error(err);
-
-      setPlannerTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, completed: !completed } : t)),
-      );
     }
   }
 
   async function handleSaveReflection() {
     try {
-      await saveReflection(reflection);
+      await savePlannerReflection(reflection);
+
       setSaved(true);
     } catch (err) {
-      console.error("Failed to save reflection:", err);
+      console.error(err);
     }
   }
 

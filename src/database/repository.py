@@ -100,6 +100,17 @@ class CollegeDriveRepository(Repository):
         self.add(drive)
         return True
 
+    def update_status(self, drive: CollegeDrive) -> bool:
+        try:
+            self.db.merge(drive)
+            self.db.commit()
+            return True
+
+        except Exception:
+            self.db.rollback()
+            return False
+        
+
 
 
 class RssRepository(Repository):
