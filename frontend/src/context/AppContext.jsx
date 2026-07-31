@@ -1,16 +1,21 @@
 import { createContext, useContext, useState } from "react";
 
-import {
-  generatePlanner,
-  completeTask,
-  saveReflection,
-} from "../apis/planner";
+import { generatePlanner, completeTask, saveReflection } from "../apis/planner";
 
 import {
   extractCollegeDrives,
   removeCollegeDrive,
   updateCollegeDriveStatus,
 } from "../apis/college";
+
+import {
+  extractJobs,
+  refreshJobs as refreshJobsData,
+  updateJobStatus as updateJobStatusApi,
+  removeJob,
+} from "../apis/job";
+
+
 
 const AppContext = createContext(null);
 
@@ -26,6 +31,12 @@ export function AppProvider({ children }) {
   const [collegeDrives, setCollegeDrives] = useState([]);
   const [collegeLoading, setCollegeLoading] = useState(false);
   const [collegeLoaded, setCollegeLoaded] = useState(false);
+
+  // ----------------- Jobs -----------------
+
+  const [jobs, setJobs] = useState([]);
+  const [jobLoading, setJobLoading] = useState(false);
+  const [jobLoaded, setJobLoaded] = useState(false);
 
   // ---------------- Global ----------------
 
@@ -126,9 +137,7 @@ export function AppProvider({ children }) {
   async function deleteDrive(driveId) {
     const previous = [...collegeDrives];
 
-    setCollegeDrives((prev) =>
-      prev.filter((drive) => drive.id !== driveId),
-    );
+    setCollegeDrives((prev) => prev.filter((drive) => drive.id !== driveId));
 
     try {
       await removeCollegeDrive(driveId);
@@ -139,14 +148,76 @@ export function AppProvider({ children }) {
   }
 
   // ===========================================================
+  // Jobs
+  // ===========================================================
+
+  async function refreshJobs() {
+    setJobLoading(true);
+
+    try {
+      const jobs = await refreshJobsData();
+
+      setJobs(jobs);
+      setJobLoaded(true);
+    } finally {
+      setJobLoading(false);
+    }
+  }
+
+  async function updateJobStatus(jobId, status) {
+    const previous = [...jobs];
+
+    setJobs((prev) =>
+      prev.map((job) =>
+        job.id === jobId
+          ? {
+              ...job,
+              status,
+            }
+          : job,
+      ),
+    );
+
+    try {
+      await updateJobStatusApi(jobId, status);
+    } catch (err) {
+      setJobs(previous);
+      throw err;
+    }
+  }
+
+  async function deleteJob(jobId) {
+    const previous = [...jobs];
+
+    setJobs((prev) => prev.filter((job) => job.id !== jobId));
+
+    try {
+      await removeJob(jobId);
+    } catch (err) {
+      setJobs(previous);
+      throw err;
+    }
+  }
+
+  async function loadJobs() {
+    setJobLoading(true);
+
+    try {
+      const jobs = await extractJobs();
+
+      setJobs(jobs);
+      setJobLoaded(true);
+    } finally {
+      setJobLoading(false);
+    }
+  }
+
+  // ===========================================================
   // Global
   // ===========================================================
 
   async function refreshAll() {
-    await Promise.all([
-      refreshPlanner(),
-      refreshCollege(),
-    ]);
+    await Promise.all([refreshPlanner(), refreshCollege(), refreshJobsData()]);
 
     setLastRefresh(new Date());
   }
@@ -171,6 +242,16 @@ export function AppProvider({ children }) {
         refreshCollege,
         updateDriveStatus,
         deleteDrive,
+
+        // Jobs
+        jobs,
+        jobLoading,
+        jobLoaded,
+
+        refreshJobsData,
+        updateJobStatus,
+        deleteJob,
+        loadJobs,
 
         // Global
         refreshAll,

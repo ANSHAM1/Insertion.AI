@@ -51,64 +51,74 @@ function DriveDetailModal({ drive, onClose, onDelete, onStatusChange }) {
       </span>
 
       <div className="mt-5 space-y-1">
-        <Row title="Company" value={drive.company} />
-        <Row title="Role" value={drive.role} />
-        <Row title="Description" value={drive.description} />
+        <div className="mt-5 space-y-1">
+          <Row title="Company" value={drive.company} />
 
-        <Row title="Employment Type" value={drive.employment_type} />
+          <Row title="Role" value={drive.role} />
 
-        <Row title="Recruitment Type" value={drive.recruitment_type} />
+          <Row title="Description" value={drive.description} />
 
-        <Row title="Location" value={drive.location} />
+          <Row title="Employment Type" value={drive.employment_type} />
 
-        <Row title="Salary" value={drive.salary} />
+          <Row title="Recruitment Type" value={drive.recruitment_type} />
 
-        <Row
-          title="Bond"
-          value={drive.bond != null ? `${drive.bond} months` : null}
-        />
+          <Row title="Location" value={drive.location} />
 
-        <Row title="Status" value={drive.status} />
+          <Row title="Salary" value={drive.salary} />
 
-        <Row title="Drive Date" value={drive.drive_date} />
+          <Row
+            title="Bond"
+            value={drive.bond != null ? `${drive.bond} months` : null}
+          />
 
-        <Row title="Report Time" value={drive.report_time} />
+          <Row title="Status" value={drive.status} />
 
-        <Row title="Venue" value={drive.venue} />
+          <Row title="Drive Date" value={drive.drive_date} />
 
-        <Row
-          title="Resume Tailored"
-          value={drive.resume_tailored ? "Yes" : "No"}
-        />
+          <Row title="Report Time" value={drive.report_time} />
 
-        <Row title="Resume Path" value={drive.resume_path} />
+          <Row title="Venue" value={drive.venue} />
 
-        <Row title="Created" value={drive.created_at} />
+          {drive.skills && drive.skills.length > 0 && (
+            <div className="border-b border-border py-2">
+              <div className="mb-2 text-sm font-medium text-text-secondary">
+                Skills
+              </div>
 
-        <Row title="Updated" value={drive.updated_at} />
-
-        {drive.apply_url && (
-          <div className="border-b border-border py-2">
-            <div className="mb-2 text-sm font-medium text-text-secondary">
-              Apply Link
+              <div className="flex flex-wrap gap-2">
+                {drive.skills.map((skill) => (
+                  <span
+                    key={skill}
+                    className="rounded-full bg-surface-hover px-3 py-1 text-xs"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
+          )}
 
-            <button
-              onClick={async () => {
-                if (!drive.apply_url) return;
+          {drive.apply_url && (
+            <div className="border-b border-border py-2">
+              <div className="mb-2 text-sm font-medium text-text-secondary">
+                Apply Link
+              </div>
 
-                const url = drive.apply_url.startsWith("http")
-                  ? drive.apply_url
-                  : `https://${drive.apply_url}`;
+              <button
+                onClick={async () => {
+                  const url = drive.apply_url.startsWith("http")
+                    ? drive.apply_url
+                    : `https://${drive.apply_url}`;
 
-                await openUrl(url);
-              }}
-              className="text-sm text-accent underline break-all"
-            >
-              {drive.apply_url}
-            </button>
-          </div>
-        )}
+                  await openUrl(url);
+                }}
+                className="break-all text-sm text-accent underline"
+              >
+                {drive.apply_url}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap justify-end gap-2">
