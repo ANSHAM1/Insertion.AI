@@ -20,6 +20,12 @@ async fn run_python(command: String, payload: Option<Value>) -> Result<Value, St
         .await
         .map_err(|e| e.to_string())?;
 
+    // eprintln!("=== PYTHON STDERR ===");
+    // eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+
+    // eprintln!("=== PYTHON STDOUT ===");
+    // eprintln!("{}", String::from_utf8_lossy(&output.stdout));
+
     if !output.status.success() {
         return Err(String::from_utf8_lossy(&output.stderr).to_string());
     }

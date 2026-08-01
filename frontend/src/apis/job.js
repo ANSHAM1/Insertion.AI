@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export async function extractJobs() {
+export async function refreshJobsData() {
   const result = await invoke("run_python", {
     command: "job",
   });
@@ -8,9 +8,9 @@ export async function extractJobs() {
   return result.items ?? [];
 }
 
-export async function refreshJobs() {
+export async function extractJobs() {
   const result = await invoke("run_python", {
-    command: "job_refresh",
+    command: "new_jobs",
   });
 
   return result.items ?? [];

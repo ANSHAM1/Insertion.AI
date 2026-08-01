@@ -12,6 +12,6 @@ def fetch_jobs(last_sync : datetime | None) -> list[JobClass]:
     if not last_sync:
         return adzuna.search_jobs(max_days_old=7, limit=20)
 
-    max_days_old = max(1, min((date.today() - last_sync).days, 5))
+    max_days_old = max(1, min((date.today() - last_sync.date()).days, 5))
 
     return adzuna.search_jobs(max_days_old=max_days_old, limit=20,)

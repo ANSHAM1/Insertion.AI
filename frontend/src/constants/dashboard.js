@@ -21,3 +21,9 @@ export const SECTION_TITLE =
 
 export const AI_PANEL =
   "rounded-xl border border-border bg-bg p-5";
+
+export const CARD_HOVER =
+  "transition-all duration-200 hover:border-border-strong hover:bg-surface-hover";
+
+export const BADGE_SOFT =
+  "rounded-full px-2.5 py-1 text-xs font-medium";

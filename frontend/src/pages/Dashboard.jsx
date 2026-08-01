@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
 
 import Header from "../components/Header";
@@ -11,6 +11,7 @@ import HiringTodayCard from "../components/dashboard/HiringTodayCard";
 import SkillPairCard from "../components/dashboard/SkillPairCard";
 import SkillGapCard from "../components/dashboard/SkillGapCard";
 import ResumeDistributionCard from "../components/dashboard/ResumeDistributionCard";
+import ReadingArticleCard from "../components/dashboard/ReadingArticleCard";
 
 import { useApp } from "../context/AppContext";
 
@@ -18,7 +19,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  const { refreshAll, plannerLoading, lastRefresh } = useApp();
+  const { refreshAll, plannerLoading, lastRefresh, dashboardData, dashboardLoading, dashboardLoaded } = useApp();
 
   async function handleRefresh() {
     if (refreshing) return;
@@ -31,24 +32,6 @@ export default function Dashboard() {
       setRefreshing(false);
     }
   }
-
-  const trend = [
-    { date: "Jul 1", completed: 5, total: 7 },
-    { date: "Jul 2", completed: 6, total: 7 },
-    { date: "Jul 3", completed: 4, total: 7 },
-    { date: "Jul 4", completed: 7, total: 7 },
-    { date: "Jul 5", completed: 3, total: 7 },
-    { date: "Jul 6", completed: 6, total: 7 },
-    { date: "Jul 7", completed: 5, total: 7 },
-    { date: "Jul 8", completed: 7, total: 7 },
-    { date: "Jul 9", completed: 6, total: 7 },
-    { date: "Jul 10", completed: 4, total: 7 },
-    { date: "Jul 11", completed: 2, total: 7 },
-    { date: "Jul 12", completed: 7, total: 7 },
-    { date: "Jul 13", completed: 5, total: 7 },
-    { date: "Jul 14", completed: 6, total: 7 },
-    { date: "Jul 15", completed: 7, total: 7 },
-  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -67,7 +50,7 @@ export default function Dashboard() {
                 })}`
               : "Never refreshed"
           }
-          className="flex h-10 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+          className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-xs font-medium text-text-secondary transition-colors hover:border-border-strong hover:bg-surface-hover hover:text-text-primary"
         >
           <RefreshCw
             size={15}
@@ -77,16 +60,17 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Dashboard */}
+      {/* Dashboard grid — fixed 12-column layout so cards never drift
+          out of alignment, with graceful stacking on small screens. */}
 
-      <div className="flex flex-wrap gap-5">
-        {/* Top */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-6 lg:grid-cols-12">
+        {/* Row 1 — top KPIs */}
 
-        <div className="min-w-[260px] flex-1">
-          <CompletionCard completed={5} total={7} />
+        <div className="sm:col-span-3 lg:col-span-3">
+          <CompletionCard />
         </div>
 
-        <div className="min-w-[620px] flex-[3]">
+        <div className="sm:col-span-6 lg:col-span-6">
           <HiringTodayCard
             jobsAdded={14}
             averageMatch={81}
@@ -96,33 +80,37 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="min-w-[260px] flex-1">
+        <div className="sm:col-span-3 lg:col-span-3">
           <TimeLostCard plannedHours={7} workedHours={5} />
         </div>
 
-        {/* Trend */}
+        {/* Row 2 — trend, full width */}
 
-        <div className="basis-full">
-          <CompletionTrendCard data={trend} />
+        <div className="sm:col-span-6 lg:col-span-12">
+          <CompletionTrendCard data={dashboardData?.last_thirty_days_progress ?? []} />
         </div>
 
-        {/* Middle */}
+        {/* Row 3 — consistency, resume distribution, reading */}
 
-        <div className="min-w-[340px] flex-[1.2]">
+        <div className="sm:col-span-6 lg:col-span-4">
           <WeeklyConsistencyCard />
         </div>
 
-        <div className="min-w-[620px] flex-[2.2]">
+        <div className="sm:col-span-3 lg:col-span-5">
           <ResumeDistributionCard />
         </div>
 
-        {/* Bottom */}
+        <div className="sm:col-span-3 lg:col-span-3">
+          <ReadingArticleCard />
+        </div>
 
-        <div className="min-w-[520px] flex-[2]">
+        {/* Row 4 — skill insights */}
+
+        <div className="sm:col-span-6 lg:col-span-7">
           <SkillGapCard />
         </div>
 
-        <div className="min-w-[420px] flex-1">
+        <div className="sm:col-span-6 lg:col-span-5">
           <SkillPairCard />
         </div>
       </div>

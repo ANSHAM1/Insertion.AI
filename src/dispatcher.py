@@ -398,7 +398,7 @@ def job(command: str, payload: dict[Any, Any]):
 
     try:
         if command == "job":
-            return app.invoke()
+            return app.refresh_jobs()
 
         elif command == "job_status":
             app.update_status(
@@ -413,8 +413,8 @@ def job(command: str, payload: dict[Any, Any]):
             )
             return None
 
-        elif command == "job_refresh":
-            return app.refresh_jobs()
+        elif command == "new_jobs":
+            return app.invoke()
 
         raise ValueError(f"Unknown college command: {command}")
 

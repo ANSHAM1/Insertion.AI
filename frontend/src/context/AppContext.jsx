@@ -10,12 +10,12 @@ import {
 
 import {
   extractJobs,
-  refreshJobs as refreshJobsData,
+  refreshJobsData,
   updateJobStatus as updateJobStatusApi,
   removeJob,
 } from "../apis/job";
 
-
+import { extractDashboard } from "../apis/dashboard";
 
 const AppContext = createContext(null);
 
@@ -37,6 +37,12 @@ export function AppProvider({ children }) {
   const [jobs, setJobs] = useState([]);
   const [jobLoading, setJobLoading] = useState(false);
   const [jobLoaded, setJobLoaded] = useState(false);
+
+  // ---------------- Dashboard -------------
+
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardLoaded, setDashboardLoaded] = useState(false);
 
   // ---------------- Global ----------------
 
@@ -213,11 +219,33 @@ export function AppProvider({ children }) {
   }
 
   // ===========================================================
+  // Dashboard
+  // ===========================================================
+
+  async function refreshDashboard() {
+    setDashboardLoading(true);
+
+    try {
+      const dashboard = await extractDashboard();
+
+      setDashboardData(dashboard);
+      setDashboardLoaded(true);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }
+
+  // ===========================================================
   // Global
   // ===========================================================
 
   async function refreshAll() {
-    await Promise.all([refreshPlanner(), refreshCollege(), refreshJobsData()]);
+    await Promise.all([
+      refreshPlanner(),
+      refreshCollege(),
+      refreshJobs(),
+      refreshDashboard(),
+    ]);
 
     setLastRefresh(new Date());
   }
@@ -248,10 +276,17 @@ export function AppProvider({ children }) {
         jobLoading,
         jobLoaded,
 
-        refreshJobsData,
+        refreshJobs,
         updateJobStatus,
         deleteJob,
         loadJobs,
+
+        // Dashboard
+        dashboardData,
+        dashboardLoading,
+        dashboardLoaded,
+
+        refreshDashboard,
 
         // Global
         refreshAll,

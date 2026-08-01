@@ -1,6 +1,8 @@
 from typing import Any
 
 from src.dispatcher import planner, college, job, article
+from src.dashboard import dashboard
+
 import sys, json
 
 if __name__ == "__main__":
@@ -28,7 +30,9 @@ if __name__ == "__main__":
         "job" : job,
         "job_status" : job,
         "job_remove" : job,
-        "job_refresh" : job
+        "new_jobs" : job,
+
+        "dashboard" : dashboard
     }
 
     if command not in commands:

@@ -5,10 +5,9 @@ import { AppProvider } from "./context/AppContext";
 import MainLayout from "./layouts/MainLayout.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Planner from "./pages/Planner.jsx";
-import Emails from "./pages/Emails.jsx";
+import Coding from "./pages/Coding.jsx";
 import Jobs from "./pages/Jobs.jsx";
 import CollegeDrives from "./pages/CollegeDrives.jsx";
-import Calendar from "./pages/Calendar.jsx";
 import Resume from "./pages/Resume.jsx";
 
 
@@ -22,10 +21,9 @@ export default function App() {
           <Route element={<MainLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/planner" element={<Planner />} />
-            <Route path="/emails" element={<Emails />} />
+            <Route path="/coding" element={<Coding />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/college-drives" element={<CollegeDrives />} />
-            <Route path="/calendar" element={<Calendar />} />
             <Route path="/resume" element={<Resume />} />
           </Route>
         </Routes>
