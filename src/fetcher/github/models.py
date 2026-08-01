@@ -2,15 +2,26 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from src.database.enums import (
+    CodingDifficulty,
+    CodingStatus,
+    ProgrammingLanguage,
+)
+
 
 class GithubExample(BaseModel):
+
     input: str
+
     output: str
+
     explanation: str | None = None
 
 
 class GithubTestCase(BaseModel):
+
     input: str
+
     output: str
 
 
@@ -20,9 +31,7 @@ class GithubQuestion(BaseModel):
 
     title: str
 
-    difficulty: str
-
-    source: str
+    difficulty: CodingDifficulty
 
     statement: str
 
@@ -34,52 +43,46 @@ class GithubQuestion(BaseModel):
 
     hidden_testcases: list[GithubTestCase]
 
-    supported_languages: list[str]
+    supported_languages: list[ProgrammingLanguage]
 
     topics: list[str]
+
+    hints: list[str] = Field(default_factory=list)
+
+    tags: list[str] = Field(default_factory=list)
 
     time_limit: int = Field(gt=0)
 
     memory_limit: int | None = None
 
-    hints: list[str] = []
-
-    tags: list[str] = []
-
     created_at: datetime
 
     generator_model: str
 
-    generator_version: str | None = None
+    generator_version: str |None = None
 
 
 class GithubMetadata(BaseModel):
 
     question_id: str
 
-    language: str
+    language: ProgrammingLanguage
 
-    status: str
+    status: CodingStatus
 
     score: int | None = None
 
     started_at: datetime
 
+    submitted_at: datetime
+
     completed_at: datetime | None = None
 
     time_taken: int | None = None
 
-    submitted_at: datetime
-
     time_complexity: str
 
     space_complexity: str
-
-    llm_feedback: str
-
-    optimization_hint: str
-
-    edge_cases_missed: list[str] = []
 
     passed_public_tests: int
 
@@ -89,22 +92,15 @@ class GithubMetadata(BaseModel):
 
     total_hidden_tests: int
 
+    llm_feedback: str
+
+    optimization_hint: str
+
+    edge_cases_missed: list[str] = Field(default_factory=list)
+
     llm_model: str
 
-    llm_provider: str
-
-    evaluation_version: str | None = None
-
-
-class GithubSolution(BaseModel):
-
-    language: str
-
-    filename: str
-
-    source_code: str
-
-    created_at: datetime
+    evaluator_version: str | None = None
 
 
 class GithubDirectory(BaseModel):

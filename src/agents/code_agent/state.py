@@ -1,26 +1,38 @@
+from datetime import date, datetime
 from typing import TypedDict
-from datetime import date
+
 from langchain_core.prompt_values import PromptValue
 
 from src.config.state_manager import StateManager
-from src.database.models import ScheduleItem
 
-from src.database.repository import DailyScheduleRepository
+from src.database.models import CodingQuestion
+from src.database.repository import CodingRepository
 
-# from src.validators.planner_output import PlannerOutput
+from src.fetcher.github.models import (GithubMetadata, GithubQuestion)
+from src.fetcher.github.repository import GithubRepository
 
 
+class CodingState(TypedDict):
 
-class CodeState(TypedDict):
     curr_date        : date
+    timestamp        : datetime
 
     app_state        : StateManager
 
-    latest_hist_id   : str
- 
-    # output           : PlannerOutput
+    coding_repo      : CodingRepository
+    github_repo      : GithubRepository
 
-    schedule_items   : list[ScheduleItem]
+    current_question : CodingQuestion | None
+
+    github_question  : GithubQuestion | None
+    github_metadata  : GithubMetadata | None
+
+    language         : str | None
+
+    source_code      : str | None
+
+    github_path      : str | None
+
     prompt           : PromptValue
 
     llm_failed       : bool

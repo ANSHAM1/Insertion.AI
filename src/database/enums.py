@@ -36,6 +36,13 @@ class CodingStatus(Enum):
 
 
 class CodingDifficulty(Enum):
-    EASY = "EASY"
+    EASY   = "EASY"
     MEDIUM = "MEDIUM"
-    HARD = "HARD"
+    HARD   = "HARD"
+
+
+
+class ProgrammingLanguage(Enum):
+    CPP    = "CPP"
+    JAVA   = "JAVA"
+    PYTHON = "PYTHON"
