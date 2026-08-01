@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY_3 : SecretStr
     OPENROUTER_API_KEY_4 : SecretStr
 
+    GITHUB_TOKEN         : str
+
     ADZUNA_APP_ID        : str = ""
     ADZUNA_APP_KEY       : str = ""
 
