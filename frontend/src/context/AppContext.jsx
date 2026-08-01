@@ -17,6 +17,8 @@ import {
 
 import { extractDashboard } from "../apis/dashboard";
 
+import { extractArticle, updateArticleReadStatus } from "../apis/article";
+
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
@@ -25,6 +27,12 @@ export function AppProvider({ children }) {
   const [plannerTasks, setPlannerTasks] = useState([]);
   const [plannerLoading, setPlannerLoading] = useState(false);
   const [plannerLoaded, setPlannerLoaded] = useState(false);
+
+  // ---------------- Article ----------------
+
+  const [article, setArticle] = useState(null);
+  const [articleLoading, setArticleLoading] = useState(false);
+  const [articleLoaded, setArticleLoaded] = useState(false);
 
   // ---------------- College ----------------
 
@@ -99,6 +107,43 @@ export function AppProvider({ children }) {
 
   async function savePlannerReflection(reflection) {
     await saveReflection(reflection);
+  }
+
+  // ===========================================================
+  // Article
+  // ===========================================================
+
+  async function refreshArticles() {
+    setArticleLoading(true);
+
+    try {
+      const article = await extractArticle();
+
+      setArticle(article);
+      setArticleLoaded(true);
+    } finally {
+      setArticleLoading(false);
+    }
+  }
+
+  async function updateArticleStatus(status) {
+    const previous = article;
+
+    setArticle((prev) =>
+      prev
+        ? {
+            ...prev,
+            status,
+          }
+        : prev,
+    );
+
+    try {
+      await updateArticleStatusApi(status);
+    } catch (err) {
+      setArticle(previous);
+      throw err;
+    }
   }
 
   // ===========================================================
@@ -245,6 +290,7 @@ export function AppProvider({ children }) {
       refreshCollege(),
       refreshJobs(),
       refreshDashboard(),
+      refreshArticles()
     ]);
 
     setLastRefresh(new Date());
@@ -261,6 +307,14 @@ export function AppProvider({ children }) {
         refreshPlanner,
         updatePlannerTask,
         savePlannerReflection,
+
+        // Article
+        article,
+        articleLoading,
+        articleLoaded,
+
+        refreshArticles,
+        updateArticleStatus,
 
         // College
         collegeDrives,

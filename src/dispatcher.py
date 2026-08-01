@@ -35,23 +35,19 @@ class InsertionAIDispatch(ABC):
 
 class RssDispatch(InsertionAIDispatch):
 
-    def _helper(self, feed: ReadingArticle) -> Any:
+    def _helper(self, feed: ReadingArticle) -> dict[str, Any]:
 
         if not feed:
-            return {"items": []}
+            return {}
 
         return {
-            "items": [
-                {
-                    "id"           : feed.id,
-                    "title"        : feed.title,
-                    "link"         : feed.url,
-                    "source"       : feed.source,
-                    "published_at" : feed.published_at,
-                    "is_read"      : feed.is_read,
-                }
-            ]
-        } # type: ignore
+                "id"           : feed.id,
+                "title"        : feed.title,
+                "link"         : feed.url,
+                "source"       : feed.source,
+                "published_at" : feed.published_at,
+                "is_read"      : feed.is_read,
+        } 
 
     def invoke(self):
 
@@ -354,7 +350,7 @@ def article(command: str, payload: dict[Any, Any]):
         if command == "article":
             return app.invoke()
 
-        elif command == "planner_read_status":
+        elif command == "article_read_status":
             app.read_status(
                 payload["id"],
                 payload["completed"],

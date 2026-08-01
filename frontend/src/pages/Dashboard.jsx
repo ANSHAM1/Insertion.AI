@@ -19,7 +19,18 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
-  const { refreshAll, plannerLoading, lastRefresh, dashboardData, dashboardLoading, dashboardLoaded } = useApp();
+  const {
+    refreshAll,
+    plannerLoading,
+    lastRefresh,
+    dashboardData,
+    dashboardLoading,
+    dashboardLoaded,
+    article,
+    articleLoading,
+    articleLoaded,
+    updateArticleReadStatus,
+  } = useApp();
 
   async function handleRefresh() {
     if (refreshing) return;
@@ -87,7 +98,11 @@ export default function Dashboard() {
         {/* Row 2 — trend, full width */}
 
         <div className="sm:col-span-6 lg:col-span-12">
-          <CompletionTrendCard data={dashboardData?.last_thirty_days_progress ?? []} />
+          <CompletionTrendCard
+            data={dashboardData?.last_thirty_days_progress ?? []}
+            dashboardLoading={dashboardLoading}
+            dashboardLoaded={dashboardLoaded}
+          />
         </div>
 
         {/* Row 3 — consistency, resume distribution, reading */}
@@ -101,7 +116,12 @@ export default function Dashboard() {
         </div>
 
         <div className="sm:col-span-3 lg:col-span-3">
-          <ReadingArticleCard />
+          <ReadingArticleCard
+            article={article}
+            articleLoading={articleLoading}
+            articleLoaded={articleLoaded}
+            updateArticleReadStatus={updateArticleReadStatus}
+          />
         </div>
 
         {/* Row 4 — skill insights */}
