@@ -7,7 +7,7 @@ from src.agents.planner_agent.state import PlannerState
 
 from src.prompts.planner_prompt import planner_prompt
 
-from src.ai.llm_factor import FailoverLLM
+from ai.llm_factory import FailoverLLM
 from src.validators.planner_output import PlannerOutput
 
 from src.services.rss_service import generate_article

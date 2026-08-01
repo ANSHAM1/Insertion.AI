@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 
-from src.fetcher.github.models import (GithubMetadata, GithubQuestion)
+from src.fetcher.github.models import (Metadata, Question)
 from src.fetcher.github.storage import GithubStorage
 
 
@@ -36,6 +36,15 @@ class GithubRepository:
             f"/solutions/{started_at.strftime('%Y%m%d_%H%M%S')}"
         )
 
+    def _directory_by_date(self, generated_date: date) -> str:
+
+        return (
+            f"{self.ROOT}/"
+            f"{generated_date.year:04d}/"
+            f"{generated_date.month:02d}/"
+            f"{generated_date.day:02d}"
+        )
+
     @staticmethod
     def _extension(language: str) -> str:
 
@@ -45,11 +54,37 @@ class GithubRepository:
             "java": "java",
         }[language.lower()]
 
+    # Directory
+    # ------------------------------------------------------------------
+
+    def upload_directory(self, generated_date: date, questions: list[Question]) -> None:
+
+        for question in questions:
+            self.upload_question(generated_date, question)
+
+    def fetch_directory(self, generated_date : date) -> list[Question]:
+
+        directory = self._directory_by_date(generated_date)
+
+        list_files = self.storage.list_directory(directory)
+
+        fetched_questions : list[Question] = []
+
+        for file in list_files:
+            question_id = file["name"]
+
+            if not self.question_exists(generated_date, question_id):
+                continue
+
+            fetched_questions.append(self.fetch_question(generated_date, question_id))
+
+        return fetched_questions
+
 
     # Question
     # ------------------------------------------------------------------
 
-    def create_question(self, generated_date: date, question: GithubQuestion) -> str:
+    def upload_question(self, generated_date: date, question: Question) -> str:
 
         folder = self._question_folder(
             generated_date,
@@ -64,18 +99,19 @@ class GithubRepository:
 
         return folder
 
-    def fetch_question(self, generated_date: date, question_id: str) -> GithubQuestion:
+    def fetch_question(self, generated_date: date, question_id: str) -> Question:
 
         folder = self._question_folder(
             generated_date,
             question_id,
         )
 
-        return GithubQuestion.model_validate_json(
+        return Question.model_validate_json(
             self.storage.read_text(
                 f"{folder}/question.json"
             )
         )
+
 
     # Solution
     # ------------------------------------------------------------------
@@ -97,7 +133,7 @@ class GithubRepository:
     # Metadata
     # ------------------------------------------------------------------
 
-    def upload_metadata(self, github_path: str, metadata: GithubMetadata) -> None:
+    def upload_metadata(self, github_path: str, metadata: Metadata) -> None:
 
         self.storage.upload(
             path=f"{github_path}/metadata.json",
@@ -105,9 +141,9 @@ class GithubRepository:
             message="Upload Metadata",
         )
 
-    def fetch_metadata(self, github_path: str) -> GithubMetadata:
+    def fetch_metadata(self, github_path: str) -> Metadata:
 
-        return GithubMetadata.model_validate_json(
+        return Metadata.model_validate_json(
             self.storage.read_text(
                 f"{github_path}/metadata.json"
             )

@@ -5,34 +5,21 @@ from langchain_core.prompt_values import PromptValue
 
 from src.config.state_manager import StateManager
 
-from src.database.models import CodingQuestion
-from src.database.repository import CodingRepository
-
-from src.fetcher.github.models import (GithubMetadata, GithubQuestion)
-from src.fetcher.github.repository import GithubRepository
+from src.fetcher.github.models import Question
 
 
-class CodingState(TypedDict):
+class GeneratorState(TypedDict):
 
-    curr_date        : date
-    timestamp        : datetime
+    curr_date     : date
+    timestamp     : datetime
 
-    app_state        : StateManager
+    app_state     : StateManager
 
-    coding_repo      : CodingRepository
-    github_repo      : GithubRepository
+    questions     : list[Question]
+    old_questions : list[Question]
 
-    current_question : CodingQuestion | None
+    user_prompt   : PromptValue
+    prompt        : PromptValue
 
-    github_question  : GithubQuestion | None
-    github_metadata  : GithubMetadata | None
-
-    language         : str | None
-
-    source_code      : str | None
-
-    github_path      : str | None
-
-    prompt           : PromptValue
-
-    llm_failed       : bool
+    terminate     : bool
+    llm_failed    : bool

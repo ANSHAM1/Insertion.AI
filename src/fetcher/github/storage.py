@@ -66,36 +66,6 @@ class GithubStorage:
             },
         )
 
-    def update(self, path: str, content: str, sha: str, message: str) -> None:
-        encoded = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-
-        self.client.put(
-            f"contents/{path}",
-            {
-                "message": message,
-                "content": encoded,
-                "sha": sha,
-                "branch": self.client.branch,
-            },
-        )
-
-    def delete(self, path: str, sha: str, message: str) -> None:
-
-        self.client.delete(
-            f"contents/{path}",
-            {
-                "message": message,
-                "sha": sha,
-                "branch": self.client.branch,
-            },
-        )
-
-    def get_sha(self, path: str) -> str:
-
-        response = self.download(path)
-
-        return response["sha"]
-
     def read_text(self, path: str) -> str:
 
         response = self.download(path)

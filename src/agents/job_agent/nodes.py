@@ -6,7 +6,7 @@ from src.agents.job_agent.state import JobState
 from src.services.job_service import fetch_jobs
 
 from src.prompts.job_prompt import job_prompt
-from src.ai.llm_factor import FailoverLLM
+from ai.llm_factory import FailoverLLM
 
 from src.validators.job_output import JobOutput
 

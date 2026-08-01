@@ -79,6 +79,14 @@ class StateManager:
 
 
 
+    def CODE_STATE(self) -> datetime | None:
+        return self._get_datetime("code", "last_sync")
+
+    def CODE_SYNC(self, now: datetime) -> None:
+        self._set_datetime(now, "code", "last_sync")
+
+
+
     def GMAIL_STATE(self, account: str) -> str:
         file : Any = self._load_state()
         return file["gmail"][account]["last_sync"]

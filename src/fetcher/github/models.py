@@ -2,130 +2,82 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from src.database.enums import (
-    CodingDifficulty,
-    CodingStatus,
-    ProgrammingLanguage,
-)
+from src.database.enums import (CodingDifficulty, CodingStatus, ProgrammingLanguage)
 
 
-class GithubExample(BaseModel):
+class Example(BaseModel):
 
-    input: str
+    input       : str
 
-    output: str
+    output      : str
 
-    explanation: str | None = None
-
-
-class GithubTestCase(BaseModel):
-
-    input: str
-
-    output: str
+    explanation : str | None = None
 
 
-class GithubQuestion(BaseModel):
+class TestCase(BaseModel):
 
-    question_id: str
+    input  : str
 
-    title: str
-
-    difficulty: CodingDifficulty
-
-    statement: str
-
-    constraints: list[str]
-
-    examples: list[GithubExample]
-
-    public_testcases: list[GithubTestCase]
-
-    hidden_testcases: list[GithubTestCase]
-
-    supported_languages: list[ProgrammingLanguage]
-
-    topics: list[str]
-
-    hints: list[str] = Field(default_factory=list)
-
-    tags: list[str] = Field(default_factory=list)
-
-    time_limit: int = Field(gt=0)
-
-    memory_limit: int | None = None
-
-    created_at: datetime
-
-    generator_model: str
-
-    generator_version: str |None = None
+    output : str
 
 
-class GithubMetadata(BaseModel):
 
-    question_id: str
+class Question(BaseModel):
 
-    language: ProgrammingLanguage
+    question_id   : str
 
-    status: CodingStatus
+    title         : str
 
-    score: int | None = None
+    difficulty    : CodingDifficulty
 
-    started_at: datetime
+    statement     : str
 
-    submitted_at: datetime
+    summary       : str = Field(description="one line signature summary of question and not underlying algorithm")
 
-    completed_at: datetime | None = None
+    constraints   : list[str]
 
-    time_taken: int | None = None
+    examples      : list[Example]
 
-    time_complexity: str
+    testcases     : list[TestCase] 
 
-    space_complexity: str
+    topics        : list[str]
 
-    passed_public_tests: int
+    template      : str
 
-    total_public_tests: int
+    time_limit    : int = Field(gt=0)
 
-    passed_hidden_tests: int
-
-    total_hidden_tests: int
-
-    llm_feedback: str
-
-    optimization_hint: str
-
-    edge_cases_missed: list[str] = Field(default_factory=list)
-
-    llm_model: str
-
-    evaluator_version: str | None = None
+    created_at    : datetime
 
 
-class GithubDirectory(BaseModel):
+class Metadata(BaseModel):
 
-    path: str
+    question_id         : str
 
-    name: str
+    language            : ProgrammingLanguage
 
-    sha: str
+    status              : CodingStatus
 
-    url: str | None = None
+    score               : int = Field(ge=0, le=100)
+
+    started_at          : datetime
+
+    submitted_at        : datetime
+
+    time_taken          : int = Field(ge=0)
+
+    time_complexity     : str
+
+    space_complexity    : str
+
+    passed_public_tests : dict[TestCase, bool]
+
+    feedback            : str
+
+    optimization_hint   : str 
 
 
 class GithubFile(BaseModel):
 
     path: str
 
-    name: str
-
-    sha: str
-
-    size: int
-
-    download_url: str | None = None
-
-    content: str | None = None
-
-    encoding: str | None = None
+    content: str

@@ -1,46 +1,57 @@
-from langgraph.graph import START, END, StateGraph # type: ignore
+from langgraph.graph import StateGraph, START, END # type: ignore
 
-from src.agents.college_agent.nodes import (fetch_gmails_node, prompt_node, llm_inference_node, validation_router, save_node, fetch_router)
-from src.agents.college_agent.state import CollegeState
+from src.agents.code_agent.generator.state import GeneratorState
 
-
-builder = StateGraph(CollegeState)
-
-
-builder.add_node("fetch_emails", fetch_gmails_node) # type: ignore
-
-builder.add_node("prompt", prompt_node) # type: ignore
-
-builder.add_node("extract", llm_inference_node) # type: ignore
-
-builder.add_node("save", save_node) # type: ignore
+from src.agents.code_agent.generator.nodes import (fetch_github_node, fetch_router, prompt_builder_node,
+    llm_inference_node, validation_router, upload_node)
 
 
 
-builder.add_edge(START, "fetch_emails")
+builder = StateGraph(GeneratorState)
+
+
+builder.add_node("fetch", fetch_github_node) # type: ignore
+
+builder.add_node("prompt", prompt_builder_node) # type: ignore
+
+builder.add_node("llm", llm_inference_node) # type: ignore
+
+builder.add_node("save", upload_node) # type: ignore
+
+
+builder.add_edge(START, "fetch")
+
 
 builder.add_conditional_edges(
-    "fetch_emails",
+    "fetch",
     fetch_router,
     {
-        "prompt": "prompt",
         "end": END,
+        "prompt": "prompt",
     },
 )
 
-builder.add_edge("prompt", "extract")
+
+builder.add_edge(
+    "prompt",
+    "llm",
+)
+
 
 builder.add_conditional_edges(
-    "extract",
+    "llm",
     validation_router,
     {
-        "save": "save",
         "failed": END,
+        "save": "save",
     },
 )
 
-builder.add_edge("save", END)
+
+builder.add_edge(
+    "save",
+    END,
+)
 
 
-
-college_graph = builder.compile() # type: ignore
+generator_graph = builder.compile() # type: ignore
