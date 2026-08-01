@@ -1,4 +1,4 @@
-from .models import RSSFeed
+from src.fetcher.rss.models import RSSFeed
 
 RSS_FEEDS: list[RSSFeed] = [
 

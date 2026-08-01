@@ -2,7 +2,7 @@ from googleapiclient.discovery import build  # type: ignore[import]
 
 from typing import Any
 
-from .auth import get_credentials
+from src.fetcher.gmail.auth import get_credentials
 
 
 class GmailAPI:

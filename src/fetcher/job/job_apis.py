@@ -6,8 +6,8 @@ from random import shuffle
 
 import httpx
 
-from .filter import JOB_KEYWORDS, JOB_LOCATIONS
-from .models import JobClass
+from src.fetcher.job.filter import JOB_KEYWORDS, JOB_LOCATIONS
+from src.fetcher.job.models import JobClass
 
 from src.config.settings import get_settings
 

@@ -2,8 +2,8 @@ import feedparser  # type: ignore[import-untyped]
 from typing import Any
 from datetime import datetime
 
-from .feeds import RSS_FEEDS
-from .models import RSSFeed, ReadingArticleClass
+from src.fetcher.rss.feeds import RSS_FEEDS
+from src.fetcher.rss.models import RSSFeed, ReadingArticleClass
 
 
 
