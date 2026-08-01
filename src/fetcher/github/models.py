@@ -1,10 +1,20 @@
-from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+
+from pydantic import BaseModel, Field
 
 
-@dataclass(slots=True)
-class GithubQuestion:
+class GithubExample(BaseModel):
+    input: str
+    output: str
+    explanation: str | None = None
+
+
+class GithubTestCase(BaseModel):
+    input: str
+    output: str
+
+
+class GithubQuestion(BaseModel):
 
     question_id: str
 
@@ -18,21 +28,32 @@ class GithubQuestion:
 
     constraints: list[str]
 
-    examples: list[dict[str, Any]]
+    examples: list[GithubExample]
 
-    public_testcases: list[dict[str, Any]]
+    public_testcases: list[GithubTestCase]
 
-    hidden_testcases: list[dict[str, Any]]
+    hidden_testcases: list[GithubTestCase]
 
     supported_languages: list[str]
 
     topics: list[str]
 
-    time_limit: int
+    time_limit: int = Field(gt=0)
+
+    memory_limit: int | None = None
+
+    hints: list[str] = []
+
+    tags: list[str] = []
+
+    created_at: datetime
+
+    generator_model: str
+
+    generator_version: str | None = None
 
 
-@dataclass(slots=True)
-class GithubMetadata:
+class GithubMetadata(BaseModel):
 
     question_id: str
 
@@ -40,13 +61,15 @@ class GithubMetadata:
 
     status: str
 
-    score: int | None
+    score: int | None = None
 
     started_at: datetime
 
-    completed_at: datetime | None
+    completed_at: datetime | None = None
 
-    time_taken: int | None
+    time_taken: int | None = None
+
+    submitted_at: datetime
 
     time_complexity: str
 
@@ -56,19 +79,35 @@ class GithubMetadata:
 
     optimization_hint: str
 
-    model: str
+    edge_cases_missed: list[str] = []
+
+    passed_public_tests: int
+
+    total_public_tests: int
+
+    passed_hidden_tests: int
+
+    total_hidden_tests: int
+
+    llm_model: str
+
+    llm_provider: str
+
+    evaluation_version: str | None = None
 
 
-@dataclass(slots=True)
-class GithubSolution:
+class GithubSolution(BaseModel):
 
     language: str
 
+    filename: str
+
     source_code: str
 
+    created_at: datetime
 
-@dataclass(slots=True)
-class GithubDirectory:
+
+class GithubDirectory(BaseModel):
 
     path: str
 
@@ -76,9 +115,10 @@ class GithubDirectory:
 
     sha: str
 
+    url: str | None = None
 
-@dataclass(slots=True)
-class GithubFile:
+
+class GithubFile(BaseModel):
 
     path: str
 
@@ -87,3 +127,9 @@ class GithubFile:
     sha: str
 
     size: int
+
+    download_url: str | None = None
+
+    content: str | None = None
+
+    encoding: str | None = None

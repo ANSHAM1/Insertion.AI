@@ -1,9 +1,8 @@
-# src/github/repository.py
+# src/fetcher/github/repository.py
 
-import json
 from datetime import date, datetime
-from typing import Any
 
+from src.fetcher.github.models import (GithubMetadata, GithubQuestion)
 from src.fetcher.github.storage import GithubStorage
 
 
@@ -32,124 +31,105 @@ class GithubRepository:
 
     def _solution_folder(self, generated_date: date, question_id: str, started_at: datetime) -> str:
 
-        folder = self._question_folder(generated_date, question_id)
+        return (
+            f"{self._question_folder(generated_date, question_id)}"
+            f"/solutions/{started_at.strftime('%Y%m%d_%H%M%S')}"
+        )
 
-        timestamp = started_at.strftime("%Y%m%d_%H%M%S")
+    @staticmethod
+    def _extension(language: str) -> str:
 
-        return f"{folder}/solutions/{timestamp}"
+        return {
+            "cpp": "cpp",
+            "python": "py",
+            "java": "java",
+        }[language.lower()]
+
 
     # Question
     # ------------------------------------------------------------------
 
-    def create_question(self, generated_date: date, question_id: str, question: dict[str, Any]) -> str:
+    def create_question(self, generated_date: date, question: GithubQuestion) -> str:
 
-        folder = self._question_folder(generated_date, question_id)
-
-        path = f"{folder}/question.json"
+        folder = self._question_folder(
+            generated_date,
+            question.question_id,
+        )
 
         self.storage.upload(
-            path=path,
-            content=json.dumps(
-                question,
-                indent=4,
-            ),
-            message=f"Create {question_id}",
+            path=f"{folder}/question.json",
+            content=question.model_dump_json(indent=4),
+            message=f"Create Question {question.question_id}",
         )
 
         return folder
 
-    def fetch_question(self, generated_date: date, question_id: str) -> dict[str, Any]:
+    def fetch_question(self, generated_date: date, question_id: str) -> GithubQuestion:
 
         folder = self._question_folder(
             generated_date,
             question_id,
         )
 
-        text = self.storage.read_text(
-            f"{folder}/question.json"
+        return GithubQuestion.model_validate_json(
+            self.storage.read_text(
+                f"{folder}/question.json"
+            )
         )
-
-        return json.loads(text)
 
     # Solution
     # ------------------------------------------------------------------
 
-    def upload_solution(self, generated_date: date, question_id: str, started_at: datetime, language: str, source: str) -> str:
-
-        folder = self._solution_folder(generated_date, question_id, started_at)
-
-        extension = {
-            "cpp": "cpp",
-            "python": "py",
-            "java": "java",
-        }[language]
-
-        path = f"{folder}/solution.{extension}"
+    def upload_solution(self, github_path: str, language: str, source_code: str) -> None:
 
         self.storage.upload(
-            path=path,
-            content=source,
-            message=f"Solve {question_id}",
+            path=f"{github_path}/solution.{self._extension(language)}",
+            content=source_code,
+            message="Upload Solution",
         )
-
-        return folder
 
     def fetch_solution(self, github_path: str, language: str) -> str:
 
-        extension = {
-            "cpp": "cpp",
-            "python": "py",
-            "java": "java",
-        }[language]
-
         return self.storage.read_text(
-            f"{github_path}/solution.{extension}"
+            f"{github_path}/solution.{self._extension(language)}"
         )
 
     # Metadata
     # ------------------------------------------------------------------
 
-    def upload_metadata(self, github_path: str, metadata: dict[str, Any]) -> None:
+    def upload_metadata(self, github_path: str, metadata: GithubMetadata) -> None:
 
         self.storage.upload(
             path=f"{github_path}/metadata.json",
-            content=json.dumps(
-                metadata,
-                indent=4,
-            ),
-            message="Add metadata",
+            content=metadata.model_dump_json(indent=4),
+            message="Upload Metadata",
         )
 
-    def fetch_metadata(self, github_path: str) -> dict[str, Any]:
+    def fetch_metadata(self, github_path: str) -> GithubMetadata:
 
-        text = self.storage.read_text(
-            f"{github_path}/metadata.json"
+        return GithubMetadata.model_validate_json(
+            self.storage.read_text(
+                f"{github_path}/metadata.json"
+            )
         )
-
-        return json.loads(text)
 
     # Helpers
     # ------------------------------------------------------------------
 
     def question_exists(self, generated_date: date, question_id: str) -> bool:
 
-        folder = self._question_folder(
-            generated_date,
-            question_id,
-        )
-
         return self.storage.exists(
-            f"{folder}/question.json"
+            f"{self._question_folder(generated_date, question_id)}/question.json"
         )
 
     def solution_exists(self, github_path: str, language: str) -> bool:
 
-        extension = {
-            "cpp": "cpp",
-            "python": "py",
-            "java": "java",
-        }[language]
+        return self.storage.exists(
+            f"{github_path}/solution.{self._extension(language)}"
+        )
+
+    def metadata_exists(self, github_path: str) -> bool:
 
         return self.storage.exists(
-            f"{github_path}/solution.{extension}"
+            f"{github_path}/metadata.json"
         )
