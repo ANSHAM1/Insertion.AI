@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY_4 : SecretStr
 
     GITHUB_TOKEN         : str
+    
+    GITHUB_OWNER         : str
+    GITHUB_REPO          : str
+    GITHUB_BRANCH        : str = "main"
 
     ADZUNA_APP_ID        : str = ""
     ADZUNA_APP_KEY       : str = ""
