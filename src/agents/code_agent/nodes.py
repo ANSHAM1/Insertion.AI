@@ -1,7 +1,7 @@
 from typing import Any
 
 from src.database.models import CollegeDrive
-from src.agents.college_agent.state import CollegeState
+from src.agents.code_agent.state import CodeState
 
 from src.prompts.college_prompt import college_prompt
 from src.ai.llm_factor import FailoverLLM
@@ -11,18 +11,11 @@ from src.validators.college_output import CollegeDriveOutput
 from src.services.gmail_service import fetch_emails
 
 
+from src.dispatcher import PlannerDispatch
 
-def fetch_gmails_node(state: CollegeState) -> dict[str, Any]:
 
-    last_sync = state["app_state"].GMAIL_STATE("college")
+def fetch_schedule_node(state: CodeState) -> dict[str, Any]:
 
-    emails, _, latest_hist_id = fetch_emails("college", last_sync)
-
-    emails = [
-        email
-        for email in emails 
-        if ("register yourself" in email.subject.lower() and "reminder" not in email.subject.lower())
-        ]
 
     return {
         "emails"         : emails,

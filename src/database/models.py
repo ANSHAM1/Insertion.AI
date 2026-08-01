@@ -1,9 +1,9 @@
-from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text, Time, JSON, FLOAT)
+from sqlalchemy import (Boolean, Date, DateTime, Enum as SqlEnum, String, ForeignKey, Text, Time, JSON, FLOAT, Integer)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone, time
 
-from .enums import (EmploymentType, JobStatus, RecruitmentType)
+from .enums import (EmploymentType, JobStatus, RecruitmentType, CodingStatus, CodingDifficulty)
 
 
 
@@ -134,6 +134,34 @@ class ReadingArticle(Base):
 
 
 
+class CodingQuestion(Base):
+    __tablename__ = "coding_questions"
+
+    id               : Mapped[int]              = mapped_column(primary_key=True, autoincrement=True)
+
+    question_id      : Mapped[str]              = mapped_column(String(32))
+    batch_id         : Mapped[str]              = mapped_column(String(32), index=True)
+    title            : Mapped[str]              = mapped_column(String(300), nullable=False)
+
+    difficulty       : Mapped[CodingDifficulty] = mapped_column(SqlEnum(CodingDifficulty), nullable=False)
+    status           : Mapped[CodingStatus]     = mapped_column(SqlEnum(CodingStatus), default=CodingStatus.ACTIVE, index=True)
+    language         : Mapped[str | None]       = mapped_column(String(20), nullable=True)
+    score            : Mapped[int | None]       = mapped_column(Integer, nullable=True)
+
+    time_limit       : Mapped[int]              = mapped_column(Integer, nullable=False)   # minutes
+    time_taken       : Mapped[int | None]       = mapped_column(Integer, nullable=True)    # minutes
+
+    generated_date   : Mapped[date]             = mapped_column(Date, index=True)
+
+    started_at       : Mapped[datetime | None]  = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at     : Mapped[datetime | None]  = mapped_column(DateTime(timezone=True), nullable=True)
+
+    github_path      : Mapped[str]              = mapped_column(String(500), nullable=False) # solution path in github repo
+
+    created_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    updated_at       : Mapped[datetime]         = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
+                                                                onupdate=lambda: datetime.now(timezone.utc))
 
 
 

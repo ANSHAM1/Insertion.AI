@@ -24,3 +24,18 @@ class EmploymentType(str, Enum):
 class RecruitmentType(str, Enum):
     ONCAMPUS  = "ONCAMPUS"
     OFFCAMPUS = "OFFCAMPUS"
+
+
+
+class CodingStatus(Enum):
+    ACTIVE  = "ACTIVE"
+    FAILED  = "FAILED"
+    SOLVED  = "SOLVED"
+    OPTIMAL = "OPTIMAL"
+
+
+
+class CodingDifficulty(Enum):
+    EASY = "EASY"
+    MEDIUM = "MEDIUM"
+    HARD = "HARD"
