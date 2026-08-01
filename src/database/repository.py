@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from datetime import date
+from datetime import date, datetime, timedelta, time
 from typing import Any
 from collections.abc import Iterable
 
@@ -120,6 +120,17 @@ class RssRepository(Repository):
 
     def get(self, article_id: int) -> ReadingArticle | None:
         return self.db.get(ReadingArticle, article_id)
+
+    def get_by_date(self, day: date) -> ReadingArticle | None:
+        start = datetime.combine(day, time.min)
+        end = start + timedelta(days=1)
+
+        return self.db.scalar(
+            select(ReadingArticle).where(
+                ReadingArticle.created_at >= start,
+                ReadingArticle.created_at < end,
+            )
+        )
 
     def find_duplicate(self, url: str) -> ReadingArticle | None:
         return self.db.scalar(

@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.dispatcher import planner, college, job
+from src.dispatcher import planner, college, job, article
 import sys, json
 
 if __name__ == "__main__":
@@ -17,6 +17,9 @@ if __name__ == "__main__":
         "planner": planner,
         "planner_complete": planner,
         "planner_reflection": planner,
+
+        "article": article,
+        "planner_read_status": article,
 
         "college": college,
         "college_status": college,

@@ -9,8 +9,8 @@ from src.config.state_manager import StateManager
 from src.database.connection import SessionLocal
 from src.database.enums import JobStatus
 
-from src.database.repository import (DailyScheduleRepository, EventRepository, RssRepository, CollegeDriveRepository, JobRepository)
-from src.database.models import (DailySchedule, CollegeDrive, Job)
+from src.database.repository import (DailyScheduleRepository, RssRepository, CollegeDriveRepository, JobRepository)
+from src.database.models import (DailySchedule, CollegeDrive, Job, ReadingArticle)
 
 from src.agents.planner_agent.workflow import planner_graph
 from src.agents.college_agent.workflow import college_graph
@@ -31,6 +31,48 @@ class InsertionAIDispatch(ABC):
     def close(self):
         self.db.close()
 
+
+
+class RssDispatch(InsertionAIDispatch):
+
+    def _helper(self, feed: ReadingArticle) -> Any:
+
+        if not feed:
+            return {"items": []}
+
+        return {
+            "items": [
+                {
+                    "id"           : feed.id,
+                    "title"        : feed.title,
+                    "link"         : feed.url,
+                    "source"       : feed.source,
+                    "published_at" : feed.published_at,
+                    "is_read"      : feed.is_read,
+                }
+            ]
+        } # type: ignore
+
+    def invoke(self):
+
+        repo = RssRepository(self.db)
+
+        feed = repo.get_by_date(date.today())
+        if feed is None:
+            raise ValueError("Task not found.")
+
+        return self._helper(feed)
+
+    def read_status(self, id : int, status : bool) -> None:
+
+        repo = RssRepository(self.db)
+
+        feed = repo.get(id)
+        if feed is None:
+            raise ValueError("Task not found.")
+        
+        feed.is_read = status
+        repo.commit()
 
 
 class PlannerDispatch(InsertionAIDispatch):
@@ -75,7 +117,6 @@ class PlannerDispatch(InsertionAIDispatch):
             "curr_schedule"  : None,
             "rss_repo"       : RssRepository(self.db),
             "schedule_repo"  : schedule_repo,
-            "event_repo"     : EventRepository(self.db),
             "prompt"         : "",
             "llm_failed"     : False,
         }
@@ -297,6 +338,26 @@ def planner(command: str, payload: dict[Any, Any]):
         elif command == "planner_reflection":
             app.save_reflection(
                 payload["reflection"],
+            )
+            return None
+
+        raise ValueError(f"Unknown planner command: {command}")
+
+    finally:
+        app.close()
+
+
+def article(command: str, payload: dict[Any, Any]):
+    app = RssDispatch()
+
+    try:
+        if command == "article":
+            return app.invoke()
+
+        elif command == "planner_read_status":
+            app.read_status(
+                payload["id"],
+                payload["completed"],
             )
             return None
 

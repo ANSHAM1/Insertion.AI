@@ -324,12 +324,6 @@ YESTERDAY
 
 ========================================
 
-TODAY'S EVENTS
-
-{today_events}
-
-========================================
-
 Generate the optimized schedule for the REMAINING part of today only.
 
 Do not recreate the past.
