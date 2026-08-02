@@ -5,7 +5,7 @@ from src.fetcher.github.repository import GithubRepository
 from src.fetcher.github.models import Question
 
 from src.prompts.code_generator_prompt import code_generator_prompt
-from ai.llm_factory import FailoverLLM
+from src.ai.llm_factory import FailoverLLM
 
 from src.agents.code_agent.generator.state import GeneratorState
 

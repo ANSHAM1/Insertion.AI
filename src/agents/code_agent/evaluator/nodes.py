@@ -4,7 +4,7 @@ from datetime import timedelta
 from src.agents.code_agent.evaluator.state import GeneratorState
 from src.prompts.code_evaluator_prompt import code_evaluator_prompt
 
-from ai.llm_factory import FailoverLLM
+from src.ai.llm_factory import FailoverLLM
 
 from src.fetcher.github.models import Metadata
 
