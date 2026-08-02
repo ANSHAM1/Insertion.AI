@@ -20,16 +20,6 @@ import {
 
 import PageTitle from "../components/PageTitle.jsx";
 
-import CodeMirror from "@uiw/react-codemirror";
-import { createTheme } from "@uiw/codemirror-themes";
-import { tags as t } from "@lezer/highlight";
-import { python } from "@codemirror/lang-python";
-import { java } from "@codemirror/lang-java";
-import { cpp } from "@codemirror/lang-cpp";
-import { indentUnit } from "@codemirror/language";
-import { keymap } from "@codemirror/view";
-import { indentWithTab } from "@codemirror/commands";
-
 // ---------------------------------------------------------------------------
 // Static sample question bank + starter templates.
 // Swap `QUESTIONS_SEED` / `generateQuestions` for real problem data and wire
@@ -305,82 +295,49 @@ function generateQuestions(existingIds) {
   });
 }
 
-// Per-language extensions — each `lang-*` package ships its own grammar,
-// bracket/indent-on-newline behavior, and a syntax-tree-based completion
-// source (keywords, locally declared names, etc). This gives real syntax
-// highlighting + auto-indent + "IntelliSense"-style suggestions with no
-// language-server / network calls involved.
-const LANGUAGE_EXTENSIONS = {
-  python: python(),
-  java: java(),
-  cpp: cpp(),
-};
+function CodeEditor({ value, onChange }) {
+  const gutterRef = useRef(null);
+  const lineCount = value.split("\n").length;
 
-// Custom theme mapped onto the app's existing dark design tokens
-// (see src/index.css `@theme`) so the editor blends in with the rest of
-// the UI instead of looking like a foreign widget.
-const editorTheme = createTheme({
-  theme: "dark",
-  settings: {
-    background: "transparent",
-    backgroundImage: "",
-    foreground: "#eef0f3", // --color-text-primary
-    caret: "#6366f1", // --color-accent
-    selection: "rgba(99, 102, 241, 0.35)",
-    selectionMatch: "rgba(99, 102, 241, 0.25)",
-    lineHighlight: "#131519", // --color-surface
-    gutterBackground: "transparent",
-    gutterForeground: "#676c76", // --color-text-muted
-    gutterActiveForeground: "#9ba0aa", // --color-text-secondary
-    gutterBorder: "transparent",
-    fontFamily: "var(--font-mono)",
-  },
-  styles: [
-    { tag: t.comment, color: "#676c76", fontStyle: "italic" },
-    { tag: [t.lineComment, t.blockComment], color: "#676c76", fontStyle: "italic" },
-    { tag: t.keyword, color: "#6366f1" }, // --color-accent
-    { tag: [t.controlKeyword, t.moduleKeyword], color: "#6366f1" },
-    { tag: [t.string, t.special(t.string)], color: "#22c55e" }, // --color-success
-    { tag: [t.number, t.bool, t.null], color: "#eab308" }, // --color-warning
-    { tag: [t.function(t.variableName), t.definition(t.variableName)], color: "#22d3ee" }, // --color-accent-2
-    { tag: t.variableName, color: "#eef0f3" },
-    { tag: [t.propertyName, t.attributeName], color: "#22d3ee" },
-    { tag: [t.typeName, t.className, t.namespace], color: "#22d3ee" },
-    { tag: t.operator, color: "#9ba0aa" },
-    { tag: [t.punctuation, t.bracket, t.angleBracket], color: "#9ba0aa" },
-    { tag: t.definitionKeyword, color: "#6366f1" },
-    { tag: t.self, color: "#f43f5e" }, // --color-danger
-    { tag: t.invalid, color: "#f43f5e" },
-  ],
-});
+  function handleScroll(e) {
+    if (gutterRef.current) {
+      gutterRef.current.scrollTop = e.target.scrollTop;
+    }
+  }
 
-function CodeEditor({ value, onChange, language }) {
+  function handleKeyDown(e) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const target = e.target;
+      const { selectionStart, selectionEnd } = target;
+      const next = value.slice(0, selectionStart) + "  " + value.slice(selectionEnd);
+      onChange(next);
+      requestAnimationFrame(() => {
+        target.selectionStart = target.selectionEnd = selectionStart + 2;
+      });
+    }
+  }
+
   return (
-    <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-bg">
-      <CodeMirror
+    <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-bg">
+      <div
+        ref={gutterRef}
+        aria-hidden
+        className="select-none overflow-hidden bg-bg px-3 py-4 text-right font-mono-editor text-xs leading-6 text-text-muted"
+      >
+        {Array.from({ length: lineCount }, (_, i) => (
+          <div key={i}>{i + 1}</div>
+        ))}
+      </div>
+
+      <textarea
         value={value}
-        onChange={onChange}
-        theme={editorTheme}
-        height="100%"
+        onChange={(e) => onChange(e.target.value)}
+        onScroll={handleScroll}
+        onKeyDown={handleKeyDown}
+        spellCheck={false}
         placeholder="Write your solution here..."
-        extensions={[
-          LANGUAGE_EXTENSIONS[language] ?? python(),
-          indentUnit.of("    "),
-          keymap.of([indentWithTab]),
-        ]}
-        basicSetup={{
-          lineNumbers: true,
-          foldGutter: true,
-          highlightActiveLine: true,
-          highlightActiveLineGutter: true,
-          bracketMatching: true,
-          closeBrackets: true,
-          autocompletion: true,
-          indentOnInput: true,
-          tabSize: 4,
-        }}
-        style={{ height: "100%", fontSize: "13px" }}
-        className="font-mono-editor h-full [&_.cm-scroller]:font-mono-editor [&_.cm-editor]:h-full [&_.cm-editor]:bg-transparent"
+        className="flex-1 resize-none overflow-auto bg-transparent px-4 py-4 font-mono-editor text-sm leading-6 text-text-primary outline-none placeholder:text-text-muted"
       />
     </div>
   );
@@ -837,7 +794,6 @@ function AttemptWorkspace({ question, onClose }) {
             onChange={(next) =>
               setCodeByLanguage((prev) => ({ ...prev, [language]: next }))
             }
-            language={language}
           />
 
           {submitState === "accepted" && (

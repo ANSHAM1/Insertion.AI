@@ -1,7 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime
 
-from src.database.models import CodingQuestion
-from src.fetcher.github.models import Question, Metadata
+from src.fetcher.github.models import Question, TestCase
+from src.database.enums import (CodingStatus, ProgrammingLanguage)
 
 
 
@@ -11,15 +12,28 @@ class QuestionsOutput(BaseModel):
 
 
 
-class Solution(BaseModel):
+class Metadata(BaseModel):
 
-    question_id : str
+    question_id         : str
 
-    metadata     : Metadata
+    language            : ProgrammingLanguage
 
-    database     : CodingQuestion
+    status              : CodingStatus
 
+    score               : int = Field(ge=0, le=100)
 
-class SolutionsOutput(BaseModel):
+    started_at          : datetime
 
-    solutions : list[Solution]
+    submitted_at        : datetime
+
+    time_taken          : int = Field(ge=0)
+
+    time_complexity     : str
+
+    space_complexity    : str
+
+    passed_public_tests : dict[TestCase, bool]
+
+    feedback            : str
+
+    optimization_hint   : str 

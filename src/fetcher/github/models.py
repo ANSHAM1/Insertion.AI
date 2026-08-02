@@ -49,15 +49,11 @@ class Question(BaseModel):
     created_at    : datetime
 
 
-class Metadata(BaseModel):
+class FrontendMetadata(BaseModel):
 
     question_id         : str
 
     language            : ProgrammingLanguage
-
-    status              : CodingStatus
-
-    score               : int = Field(ge=0, le=100)
 
     started_at          : datetime
 
@@ -65,19 +61,21 @@ class Metadata(BaseModel):
 
     time_taken          : int = Field(ge=0)
 
+    passed_public_tests : dict[TestCase, bool]
+
+
+class AIMetadata(BaseModel):
+    
+    question_id         : str
+
+    status              : CodingStatus
+
+    score               : int = Field(ge=0, le=100)
+
     time_complexity     : str
 
     space_complexity    : str
 
-    passed_public_tests : dict[TestCase, bool]
-
     feedback            : str
 
     optimization_hint   : str 
-
-
-class GithubFile(BaseModel):
-
-    path: str
-
-    content: str

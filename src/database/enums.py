@@ -28,10 +28,9 @@ class RecruitmentType(str, Enum):
 
 
 class CodingStatus(Enum):
-    ACTIVE  = "ACTIVE"
-    FAILED  = "FAILED"
-    SOLVED  = "SOLVED"
-    OPTIMAL = "OPTIMAL"
+    FAILED         = "FAILED"
+    SOLVED         = "SOLVED"
+    OPTIMAL        = "OPTIMAL"
 
 
 
