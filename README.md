@@ -1,168 +1,51 @@
-### Schema Diagram
+## InsertionAI
 
-                                    ┌──────────────────────────────┐
-                                    │            JOBS              │
-                                    ├──────────────────────────────┤
-                                    │ PK  id                       │
-                                    │ company                      │
-                                    │ summary                      │
-                                    │ role                         │
-                                    │ employment_type              │
-                                    │ recruitment_type             │
-                                    │ location                     │
-                                    │ salary                       │
-                                    │ bond                         │
-                                    │ job_url                      │
-                                    │ experience_min               │
-                                    │ recruiter_name               │
-                                    │ recruiter_email              │
-                                    │ applied_at                   │
-                                    │ status                       │
-                                    │ status_date                  │
-                                    │ next_event_date              │
-                                    │ resume_tailored              │
-                                    │ resume_path                  │
-                                    │ created_at                   │
-                                    │ updated_at                   │
-                                    └──────────────┬───────────────┘
-                                                   │
-                         ┌─────────────────────────┴─────────────────────────┐
-                         │                                                   │
-                    1    │                                               1   │
-                         │                                                   │
-                         ▼                                                   ▼
-        ┌──────────────────────────────────────┐      ┌─────────────────────────────────────┐
-        │                EMAILS                │      │               EVENTS                │
-        ├──────────────────────────────────────┤      ├─────────────────────────────────────┤
-        │ PK  gmail_message_id                 │      │ PK  id                              │
-        │ FK  job_id ──────────────────────────┘      │ FK  job_id ─────────────────────────┘
-        │ gmail_thread_id                      │      │ title                               │
-        │ account                              │      │ description                         │
-        │ status                               │      │ event_type                          │
-        │ subject                              │      │ start_time                          │
-        │ sender_name                          │      │ end_time                            │
-        │ sender_email                         │      │ completed                           │
-        │ received_at                          │      │ created_by_ai                       │
-        │ processed                            │      │ created_at                          │
-        │ summary                              │      │ updated_at                          │
-        │ created_at                           │      └─────────────────────────────────────┘
-        └──────────────────────────────────────┘
+#### AI-Powered Career Operating System
+#### Planner • Job Discovery • Campus Recruitment • Coding Practice • Analytics
+#
 
+InsertionAI is a modular multi-agent platform that automates career management through specialized AI agents.
 
+The system combines intelligent planning, job discovery, campus placement tracking, coding practice, and long-term analytics into a single workspace.
 
-        ┌─────────────────────────────────────────────┐
-        │             DAILY_SCHEDULES                 │
-        ├─────────────────────────────────────────────┤
-        │ PK  schedule_date                           │
-        │ user_reflection                             │
-        │ generated_at                                │
-        └──────────────────────┬──────────────────────┘
-                               │
-                          1    │
-                               │
-                               ▼
-        ┌─────────────────────────────────────────────┐
-        │             SCHEDULE_ITEMS                  │
-        ├─────────────────────────────────────────────┤
-        │ PK  id                                      │
-        │ FK  schedule_date ───────────────────────────┘
-        │ title                                       │
-        │ start_time                                  │
-        │ end_time                                    │
-        │ sort_order                                  │
-        │ completed                                   │
-        │ note                                        │
-        └─────────────────────────────────────────────┘
+#
 
+### Planner Agent
 
+<p align="center">
+  <img src="diagrams/planner_agent.png" width="95%">
+</p>
 
-### AI planner
+#
 
-                                   Gmail
-                                   │
-                                   ▼
-                              EMAIL AGENT
-                                   │
-                                   ▼
-                                   EMAILS
-                                   │
-                                   ▼
-                                   JOBS
-                                   │
-                                   ▼
-                                   EVENTS
-                                   │
-                                   │
-               ┌──────────────────────┼───────────────────────────┐
-               │                      │                           │
-               ▼                      ▼                           ▼
-          Today's Events      Yesterday's Schedule        Schedule Template
-                              + Completion Notes          + Planner Prompt
-               │                      │                           │
-               └──────────────────────┴───────────────┬───────────┘
-                                                       │
-                                                       ▼
-                                             ┌─────────────────┐
-                                             │   AI Planner    │
-                                             └─────────────────┘
-                                                       │
-                                                       ▼
-                                             DAILY_SCHEDULE
-                                                       │
-                                                       ▼
-                                             SCHEDULE_ITEMS
-                                                       │
-                                                       ▼
-                                   User Completion + Task Notes
-                                                       │
-                                                       │
-                                        (stored in database)
-                                                       │
-                                                       ▼
-                                        Used for tomorrow's planning
-        
-        
-        
-        
-        START
-           │
-        load_context
-           │
-           ├── END
-           │
-           └── build_prompt
-                  │
-                 llm
-                  │
-              validate
-               │    │
-               │    └── repair
-               │          │
-               └──────────┘
-                  │
-                 save
-                  │
-            article_search
-                  │
-                 END
+### College Agent
 
+<p align="center">
+  <img src="diagrams/college_agent.png" width="95%">
+</p>
 
+#
 
-                                        START
-                                        │
-                                        Search Jobs
-                                        │
-                                        No Jobs? ─────► END
-                                        │
-                                        Build Prompt
-                                        │
-                                        LLM
-                                        │
-                                        Failed? ──────► END
-                                        │
-                                        Save Results
-                                        ├── Store jobs
-                                        ├── Update AppState(JOB_SYNC)
-                                        └── Save analysis
-                                        │
-                                        END
+### Job Agent
+
+<p align="center">
+  <img src="diagrams/job_agent.png" width="95%">
+</p>
+
+#
+
+### Coding Question Generator
+
+<p align="center">
+  <img src="diagrams/code_generator_agent.png" width="95%">
+</p>
+
+#
+
+### Coding Evaluator
+
+<p align="center">
+  <img src="diagrams/code_evaluator_agent.png" width="95%">
+</p>
+
+#
