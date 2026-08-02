@@ -15,6 +15,8 @@
         "title": "Insertion.AI",
         "width": 1400,
         "height": 800,
+        "minHeight": 600,
+        "minWidth": 1200,
         "resizable": true,
         "fullscreen": false
       }

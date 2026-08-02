@@ -95,14 +95,35 @@ ${day.percent}%`}
           <div className="w-8" />
 
           <div className="flex flex-1 gap-1">
-            {values.map((day, index) => (
-              <div
-                key={day.date}
-                className="flex-1 text-center text-[10px] text-text-muted"
-              >
-                {index % 5 === 0 ? new Date(day.date).getDate() : ""}
-              </div>
-            ))}
+            {values.map((day, index) => {
+              const crowded = values.length > 20;
+              const medium = values.length > 12 && values.length <= 20;
+
+              const showLabel = crowded
+                ? true
+                : medium
+                  ? index % 2 === 0
+                  : true;
+
+              return (
+                <div
+                  key={day.date}
+                  className="flex flex-1 justify-center overflow-visible"
+                >
+                  {showLabel && (
+                    <span
+                      className={`text-text-muted ${
+                        crowded
+                          ? "-rotate-90 origin-center whitespace-nowrap text-[9px]"
+                          : "text-[10px]"
+                      }`}
+                    >
+                      {day.date}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
