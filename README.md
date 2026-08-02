@@ -1,168 +1,189 @@
-### Schema Diagram
+# InsertionAI
 
-                                    ┌──────────────────────────────┐
-                                    │            JOBS              │
-                                    ├──────────────────────────────┤
-                                    │ PK  id                       │
-                                    │ company                      │
-                                    │ summary                      │
-                                    │ role                         │
-                                    │ employment_type              │
-                                    │ recruitment_type             │
-                                    │ location                     │
-                                    │ salary                       │
-                                    │ bond                         │
-                                    │ job_url                      │
-                                    │ experience_min               │
-                                    │ recruiter_name               │
-                                    │ recruiter_email              │
-                                    │ applied_at                   │
-                                    │ status                       │
-                                    │ status_date                  │
-                                    │ next_event_date              │
-                                    │ resume_tailored              │
-                                    │ resume_path                  │
-                                    │ created_at                   │
-                                    │ updated_at                   │
-                                    └──────────────┬───────────────┘
-                                                   │
-                         ┌─────────────────────────┴─────────────────────────┐
-                         │                                                   │
-                    1    │                                               1   │
-                         │                                                   │
-                         ▼                                                   ▼
-        ┌──────────────────────────────────────┐      ┌─────────────────────────────────────┐
-        │                EMAILS                │      │               EVENTS                │
-        ├──────────────────────────────────────┤      ├─────────────────────────────────────┤
-        │ PK  gmail_message_id                 │      │ PK  id                              │
-        │ FK  job_id ──────────────────────────┘      │ FK  job_id ─────────────────────────┘
-        │ gmail_thread_id                      │      │ title                               │
-        │ account                              │      │ description                         │
-        │ status                               │      │ event_type                          │
-        │ subject                              │      │ start_time                          │
-        │ sender_name                          │      │ end_time                            │
-        │ sender_email                         │      │ completed                           │
-        │ received_at                          │      │ created_by_ai                       │
-        │ processed                            │      │ created_at                          │
-        │ summary                              │      │ updated_at                          │
-        │ created_at                           │      └─────────────────────────────────────┘
-        └──────────────────────────────────────┘
+### AI-Powered Career Operating System
+#### Planner • Job Discovery • Campus Recruitment • Coding Practice • Analytics
 
+---
 
+### Overview
 
-        ┌─────────────────────────────────────────────┐
-        │             DAILY_SCHEDULES                 │
-        ├─────────────────────────────────────────────┤
-        │ PK  schedule_date                           │
-        │ user_reflection                             │
-        │ generated_at                                │
-        └──────────────────────┬──────────────────────┘
-                               │
-                          1    │
-                               │
-                               ▼
-        ┌─────────────────────────────────────────────┐
-        │             SCHEDULE_ITEMS                  │
-        ├─────────────────────────────────────────────┤
-        │ PK  id                                      │
-        │ FK  schedule_date ───────────────────────────┘
-        │ title                                       │
-        │ start_time                                  │
-        │ end_time                                    │
-        │ sort_order                                  │
-        │ completed                                   │
-        │ note                                        │
-        └─────────────────────────────────────────────┘
+InsertionAI is a multi-agent AI platform that centralizes career planning, job discovery, coding practice, and productivity into a single intelligent workspace.
 
+Instead of acting as a generic assistant, each agent owns a dedicated workflow and continuously maintains structured data that powers a unified dashboard and long-term analytics.
 
+The platform combines modern LLM workflows with deterministic validation, persistent storage, and modular agent architecture.
 
-### AI planner
+---
 
-                                   Gmail
-                                   │
-                                   ▼
-                              EMAIL AGENT
-                                   │
-                                   ▼
-                                   EMAILS
-                                   │
-                                   ▼
-                                   JOBS
-                                   │
-                                   ▼
-                                   EVENTS
-                                   │
-                                   │
-               ┌──────────────────────┼───────────────────────────┐
-               │                      │                           │
-               ▼                      ▼                           ▼
-          Today's Events      Yesterday's Schedule        Schedule Template
-                              + Completion Notes          + Planner Prompt
-               │                      │                           │
-               └──────────────────────┴───────────────┬───────────┘
-                                                       │
-                                                       ▼
-                                             ┌─────────────────┐
-                                             │   AI Planner    │
-                                             └─────────────────┘
-                                                       │
-                                                       ▼
-                                             DAILY_SCHEDULE
-                                                       │
-                                                       ▼
-                                             SCHEDULE_ITEMS
-                                                       │
-                                                       ▼
-                                   User Completion + Task Notes
-                                                       │
-                                                       │
-                                        (stored in database)
-                                                       │
-                                                       ▼
-                                        Used for tomorrow's planning
-        
-        
-        
-        
-        START
-           │
-        load_context
-           │
-           ├── END
-           │
-           └── build_prompt
-                  │
-                 llm
-                  │
-              validate
-               │    │
-               │    └── repair
-               │          │
-               └──────────┘
-                  │
-                 save
-                  │
-            article_search
-                  │
-                 END
+### Key Features
 
+#### ◈ AI Planner
 
+Generates an optimized schedule for the remaining part of the day by analyzing:
 
-                                        START
-                                        │
-                                        Search Jobs
-                                        │
-                                        No Jobs? ─────► END
-                                        │
-                                        Build Prompt
-                                        │
-                                        LLM
-                                        │
-                                        Failed? ──────► END
-                                        │
-                                        Save Results
-                                        ├── Store jobs
-                                        ├── Update AppState(JOB_SYNC)
-                                        └── Save analysis
-                                        │
-                                        END
+- Current time
+- Daily routine
+- Calendar events
+- Previous schedules
+- Unfinished work
+- Daily reflections
+
+Tracks task completion and continuously improves future planning.
+
+---
+
+#### ◈ College Placement Assistant
+
+Automatically monitors placement emails and extracts structured campus recruitment information including:
+
+- Company
+- Role
+- Package
+- Eligibility
+- Drive schedule
+- Venue
+- Application links
+- Recruitment details
+
+Designed specifically around recurring campus placement email patterns.
+
+---
+
+#### ◈ AI Job Discovery
+
+Automatically discovers and processes new job opportunities.
+
+Every posting is:
+
+- Normalized
+- Deduplicated
+- Resume matched
+- Skill analyzed
+
+Provides resume compatibility and skill-gap insights for every opportunity.
+
+---
+
+#### ◈ Coding Practice Platform
+
+Generates interview-quality programming questions with:
+
+- Problem statement
+- Examples
+- Constraints
+- Public test cases
+- Hidden test cases
+- Supported languages
+
+Every submission is evaluated by an AI evaluator that analyzes:
+
+- Correctness
+- Edge cases
+- Algorithm selection
+- Time complexity
+- Space complexity
+- Optimization opportunities
+
+Every solved question is permanently archived for future reference.
+
+---
+
+#### ◈ Analytics Dashboard
+
+Visualizes long-term progress through:
+
+- Daily planner completion
+- Coding performance
+- Job applications
+- College drives
+- Productivity metrics
+- Career insights
+
+---
+
+### AI Architecture
+
+InsertionAI follows a modular multi-agent architecture.
+
+Current agents include:
+
+- Planner Agent
+- College Agent
+- Job Agent
+- Coding Question Generator
+- Coding Evaluator
+
+Each agent operates independently while contributing to a shared data ecosystem.
+
+---
+
+### Technology Stack
+
+**Languages**
+
+`Python` • `C++` • `SQL` • `JavaScript`
+
+**AI**
+
+`LangChain` • `LangGraph` • `LLMs` • `Structured Outputs` • `Prompt Engineering`
+
+**Backend**
+
+`FastAPI` • `SQLAlchemy` • `REST APIs`
+
+**Database**
+
+`Microsoft SQL Server`
+
+**Frontend**
+
+`React` • `Vite` • `Tailwind CSS`
+
+**Infrastructure**
+
+`Docker` • `GitHub API` • `Gmail API` • `Adzuna API`
+
+---
+
+### Design Principles
+
+- Agent-first architecture
+- Modular workflows
+- Structured outputs
+- Deterministic validation
+- Persistent long-term memory
+- Git-based archival
+- Separation of operational and historical data
+
+---
+
+### Documentation
+
+The repository includes architecture diagrams covering:
+
+- Overall system architecture
+- Planner Agent workflow
+- College Agent workflow
+- Job Agent workflow
+- Coding Generator workflow
+- Coding Evaluator workflow
+- Database schema
+
+---
+
+### Future Roadmap
+
+- Resume Tailoring Agent
+- Interview Preparation Agent
+- Email Assistant
+- Recruiter Outreach Automation
+- Behavioral Interview Simulator
+- Multi-Resume Optimization
+- Knowledge Graph
+- Advanced Career Analytics
+
+---
+
+### License
+
+This project is intended for personal learning, research, and experimentation.
