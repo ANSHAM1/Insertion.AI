@@ -1,5 +1,4 @@
-# src/fetcher/github/repository.py
-
+from collections import defaultdict
 from datetime import date, datetime
 
 from src.fetcher.github.models import (Metadata, Question)
@@ -29,7 +28,7 @@ class GithubRepository:
             f"{question_id}"
         )
 
-    def _solution_folder(self, generated_date: date, question_id: str, started_at: datetime) -> str:
+    def solution_folder(self, generated_date: date, question_id: str, started_at: datetime) -> str:
 
         return (
             f"{self._question_folder(generated_date, question_id)}"
@@ -62,6 +61,7 @@ class GithubRepository:
         for question in questions:
             self.upload_question(generated_date, question)
 
+
     def fetch_directory(self, generated_date : date) -> list[Question]:
 
         directory = self._directory_by_date(generated_date)
@@ -80,6 +80,24 @@ class GithubRepository:
 
         return fetched_questions
 
+
+    def fetch_all(self) -> list[tuple[date, list[Question]]]:
+
+        grouped: dict[date, list[Question]] = defaultdict(list)
+
+        for file in self.storage.list_all_files():
+            if not file.path.endswith("question.json"):
+                continue
+
+            parts = file.path.split("/")
+
+            generated_date = date(year=int(parts[1]), month=int(parts[2]), day=int(parts[3]))
+
+            question = Question.model_validate_json(self.storage.read_text(file.path))
+
+            grouped[generated_date].append(question)
+
+        return sorted(grouped.items(), key=lambda x: x[0], reverse=True)
 
     # Question
     # ------------------------------------------------------------------

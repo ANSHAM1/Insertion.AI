@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from src.database.enums import (CodingDifficulty, CodingStatus, ProgrammingLanguage)
+from src.database.enums import (CodingDifficulty, ProgrammingLanguage, CodingStatus)
 
 
 class Example(BaseModel):
@@ -24,29 +24,27 @@ class TestCase(BaseModel):
 
 class Question(BaseModel):
 
-    question_id   : str
+    question_id    : str
 
-    title         : str
+    title          : str
 
-    difficulty    : CodingDifficulty
+    difficulty     : CodingDifficulty
 
-    statement     : str
+    statement      : str
 
-    summary       : str = Field(description="one line signature summary of question and not underlying algorithm")
+    summary        : str = Field(description="one line signature summary of question and not underlying algorithm")
 
-    constraints   : list[str]
+    constraints    : list[str]
 
-    examples      : list[Example]
+    examples       : list[Example]
 
-    testcases     : list[TestCase] 
+    testcases      : list[TestCase] 
 
-    topics        : list[str]
+    topics         : list[str]
 
-    template      : str
+    io_template    : str
 
-    time_limit    : int = Field(gt=0)
-
-    created_at    : datetime
+    time_limit     : int = Field(gt=0)
 
 
 class FrontendMetadata(BaseModel):
@@ -64,18 +62,36 @@ class FrontendMetadata(BaseModel):
     passed_public_tests : dict[TestCase, bool]
 
 
-class AIMetadata(BaseModel):
-    
+
+class Metadata(BaseModel):
+
     question_id         : str
+
+    language            : ProgrammingLanguage
 
     status              : CodingStatus
 
     score               : int = Field(ge=0, le=100)
 
+    started_at          : datetime
+
+    submitted_at        : datetime
+
+    time_taken          : int = Field(ge=0)
+
     time_complexity     : str
 
     space_complexity    : str
 
+    passed_public_tests : dict[TestCase, bool]
+
     feedback            : str
 
     optimization_hint   : str 
+
+
+class GithubFile(BaseModel):
+
+    path : str
+
+    name : str

@@ -3,21 +3,30 @@ from typing import TypedDict
 
 from langchain_core.prompt_values import PromptValue
 
-from src.fetcher.github.models import Question, FrontendMetadata, AIMetadata
+from src.fetcher.github.models import Question, FrontendMetadata, Metadata
+from src.validators.code_output import AIMetadataOutput
+
+from src.database.repository import CodingRepository
 
 
 class GeneratorState(TypedDict):
 
-    curr_date     : date
-    timestamp     : datetime
+    curr_date      : date
+    timestamp      : datetime
 
-    question      : Question
-    solution      : str
+    question       : Question
+    generated_date : date
+    
+    solution       : str
 
-    frontend_meta : FrontendMetadata
+    code_repo      : CodingRepository
 
-    metadata      : AIMetadata
+    frontend_meta  : FrontendMetadata
+    ai_metadata    : AIMetadataOutput | None
 
-    prompt        : PromptValue
+    metadata       : Metadata | None
 
-    llm_failed    : bool
+    prompt         : PromptValue
+    llm_failed     : bool
+
+    uploaded       : bool

@@ -1,11 +1,10 @@
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 from datetime import date, datetime, timedelta, time
 from typing import Any
 from collections.abc import Iterable
 
-from src.database.models import Job, JobLookup, ReadingArticle, DailySchedule, ScheduleItem, CollegeDrive, CodingQuestion, CodingStatus
-
+from src.database.models import Job, JobLookup, ReadingArticle, DailySchedule, ScheduleItem, CollegeDrive, CodeSolution
 
 
 class Repository:
@@ -205,69 +204,43 @@ class DailyScheduleRepository(Repository):
 
 class CodingRepository(Repository):
 
-    def get(self, id: int) -> CodingQuestion | None:
-        return self.db.get(CodingQuestion, id)
+    def get(self, id: int) -> CodeSolution | None:
+        return self.db.get(CodeSolution, id)
 
-    def get_by_question_id(self, question_id: str) -> list[CodingQuestion]:
+    def get_by_question_id(self, question_id: str) -> list[CodeSolution]:
         return list(
             self.db.scalars(
-                select(CodingQuestion)
-                .where(CodingQuestion.question_id == question_id)
-                .order_by(CodingQuestion.started_at.desc())
+                select(CodeSolution)
+                .where(CodeSolution.question_id == question_id)
+                .order_by(CodeSolution.started_at.desc())
             ).all()
         )
 
-    def get_latest_attempt(self, question_id: str) -> CodingQuestion | None:
+    def get_latest_attempt(self, question_id: str) -> CodeSolution | None:
         return self.db.scalar(
-            select(CodingQuestion)
-            .where(CodingQuestion.question_id == question_id)
-            .order_by(CodingQuestion.started_at.desc())
+            select(CodeSolution)
+            .where(CodeSolution.question_id == question_id)
+            .order_by(CodeSolution.started_at.desc())
             .limit(1)
         )
 
-    def get_all(self) -> list[CodingQuestion]:
+    def get_all(self) -> list[CodeSolution]:
         return list(
             self.db.scalars(
-                select(CodingQuestion)
+                select(CodeSolution)
                 .order_by(
-                    CodingQuestion.generated_date.desc(),
-                    CodingQuestion.started_at.desc(),
+                    CodeSolution.generated_date.desc(),
+                    CodeSolution.started_at.desc(),
                 )
-            ).all()
-        )
-
-    def get_batch(self, batch_id: str) -> list[CodingQuestion]:
-        return list(
-            self.db.scalars(
-                select(CodingQuestion)
-                .where(CodingQuestion.batch_id == batch_id)
-                .order_by(CodingQuestion.question_id)
-            ).all()
-        )
-
-    def get_active(self) -> list[CodingQuestion]:
-        return list(
-            self.db.scalars(
-                select(CodingQuestion)
-                .where(CodingQuestion.status == CodingStatus.ACTIVE)
-                .order_by(CodingQuestion.started_at)
             ).all()
         )
 
     def exists(self, question_id: str) -> bool:
         return (
             self.db.scalar(
-                select(CodingQuestion.question_id)
-                .where(CodingQuestion.question_id == question_id)
+                select(CodeSolution.question_id)
+                .where(CodeSolution.question_id == question_id)
                 .limit(1)
             )
             is not None
         )
-
-    def get_next_question_number(self) -> int:
-        value = self.db.scalar(
-            select(func.count())
-            .select_from(CodingQuestion)
-        )
-
-        return (value or 0) + 1

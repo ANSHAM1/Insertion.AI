@@ -46,3 +46,13 @@ class GithubClient:
 
         response.raise_for_status()
         return response
+
+    def recursive_tree(self) -> list[dict[str, Any]]:
+        response = self.get(
+            f"git/trees/{self.branch}",
+            params={
+                "recursive": "1",
+            },
+        )
+
+        return response.json()["tree"]

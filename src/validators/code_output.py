@@ -1,38 +1,26 @@
 from pydantic import BaseModel, Field
-from datetime import datetime
 
-from src.fetcher.github.models import Question, TestCase
-from src.database.enums import (CodingStatus, ProgrammingLanguage)
+from src.fetcher.github.models import Question
+from src.database.enums import CodingStatus
 
 
 
 class QuestionsOutput(BaseModel):
 
-    questions : list[Question]
+    questions: list[Question] = Field(min_length=4, max_length=4)
 
 
-
-class Metadata(BaseModel):
-
+class AIMetadataOutput(BaseModel):
+    
     question_id         : str
-
-    language            : ProgrammingLanguage
 
     status              : CodingStatus
 
     score               : int = Field(ge=0, le=100)
 
-    started_at          : datetime
-
-    submitted_at        : datetime
-
-    time_taken          : int = Field(ge=0)
-
     time_complexity     : str
 
     space_complexity    : str
-
-    passed_public_tests : dict[TestCase, bool]
 
     feedback            : str
 

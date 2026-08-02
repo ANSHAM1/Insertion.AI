@@ -4,7 +4,7 @@ from typing import Any, List, Dict, cast
 import httpx
 
 from src.fetcher.github.client import GithubClient
-
+from src.fetcher.github.models import GithubFile
 
 class GithubStorage:
 
@@ -71,3 +71,14 @@ class GithubStorage:
         response = self.download(path)
 
         return base64.b64decode(response["content"]).decode("utf-8")
+
+    def list_all_files(self) -> list[GithubFile]:
+
+        return [
+            GithubFile(
+                path=item["path"],
+                name=item["path"].rsplit("/", 1)[-1],
+            )
+            for item in self.client.recursive_tree()
+            if item.get("type") == "blob"
+        ]
