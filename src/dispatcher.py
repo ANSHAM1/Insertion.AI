@@ -1,6 +1,6 @@
 import json
 from abc import ABC, abstractmethod
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from src.config.settings import get_settings
@@ -79,32 +79,34 @@ class RssDispatch(InsertionAIDispatch):
 
 class PlannerDispatch(InsertionAIDispatch):
 
-    def _helper(self, data: DailySchedule | None) -> Any:
-        if data is None:
-            return {"items": []}
+    def _helper(self, schedules: list[DailySchedule]) -> dict[str, Any]:
 
         return {
-            "items": [
+            "days": [
                 {
-                    "id"         : item.id,
-                    "title"      : item.title,
-                    "start_time" : item.start_time.strftime("%H:%M"),
-                    "end_time"   : item.end_time.strftime("%H:%M"),
-                    "completed"  : item.completed,
-                    "note"       : item.note,
+                    "date": schedule.schedule_date.isoformat(),
+                    "items": [
+                        {
+                            "id": item.id,
+                            "title": item.title,
+                            "start_time": item.start_time.strftime("%H:%M"),
+                            "end_time": item.end_time.strftime("%H:%M"),
+                            "completed": item.completed,
+                            "note": item.note,
+                        }
+                        for item in sorted(schedule.items, key=lambda x: x.id)
+                    ],
                 }
-                for item in sorted(data.items, key=lambda x: x.id)
+                for schedule in sorted(
+                    schedules,
+                    key=lambda x: x.schedule_date,
+                )
             ]
-        } # type: ignore
+        }
 
     def invoke(self):
 
         schedule_repo = DailyScheduleRepository(self.db)
-
-        last_sync = self.app_state.PLANNER_STATE()
-        if last_sync and last_sync.date() == date.today():
-             return self._helper(schedule_repo.get_schedule(date.today()))
-
 
         with open(self.settings.SCHEDULE_PATH, "r", encoding="utf-8") as file:
             template = json.load(file)
@@ -124,7 +126,22 @@ class PlannerDispatch(InsertionAIDispatch):
         }
 
         planner_graph.invoke(state) # type: ignore
-        return self._helper(schedule_repo.get_schedule(date.today()))
+
+        today = date.today()
+        monday = today - timedelta(days=today.weekday())
+
+        schedules = [
+            schedule_repo.get_schedule(day)
+            for day in (
+                monday + timedelta(days=i)
+                for i in range((today - monday).days + 1)
+            )
+        ]
+
+        return self._helper(
+            [s for s in schedules if s is not None]
+        )
+
 
     def update_item(self, task_id : int, completed: bool):
 

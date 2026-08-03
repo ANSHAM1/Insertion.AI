@@ -2,19 +2,11 @@ import { invoke } from "@tauri-apps/api/core";
 
 
 export async function generatePlanner() {
-  const result = await invoke("run_python", {
+  const { days = [] } = await invoke("run_python", {
     command: "planner",
   });
 
-  return result.items.map((item) => ({
-    id: item.id,
-    title: item.title,
-    time: `${item.start_time} - ${item.end_time}`,
-    startTime: item.start_time,
-    endTime: item.end_time,
-    completed: item.completed,
-    note: item.note,
-  }));
+  return days;
 }
 
 export async function completeTask(id, completed) {

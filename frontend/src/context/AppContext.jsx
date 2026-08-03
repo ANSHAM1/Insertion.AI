@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 
-// import { generatePlanner, completeTask, saveReflection } from "../apis/planner";
+import { generatePlanner, completeTask, saveReflection } from "../apis/planner";
 
 // import {
 //   extractCollegeDrives,
@@ -27,9 +27,61 @@ export function AppProvider({ children }) {
   const [lastSync, setLastSync] = useState(new Date());
   const [syncing, setSyncing] = useState(false);
 
-  // const [plannerTasks, setPlannerTasks] = useState([]);
-  // const [plannerLoading, setPlannerLoading] = useState(false);
-  // const [plannerLoaded, setPlannerLoaded] = useState(false);
+  const [planner, setPlanner] = useState([]);
+  const [loadingPlanner, setLoadingPlanner] = useState(false);
+  const [reflection, setReflection] = useState(false);
+
+  const refreshPlanner = async () => {
+    if (syncing) return;
+
+    try {
+      const data = await generatePlanner();
+
+      setPlanner(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const toggleTask = async (id, completed) => {
+    // optimistic update first, so the UI responds instantly
+    setPlanner((prev) =>
+      prev.map((day) => ({
+        ...day,
+        items: day.items.map((item) =>
+          String(item.id) === String(id) ? { ...item, completed } : item,
+        ),
+      })),
+    );
+
+    try {
+      await completeTask(id, completed);
+    } catch (err) {
+      console.error(err);
+
+      // rollback on failure
+      setPlanner((prev) =>
+        prev.map((day) => ({
+          ...day,
+          items: day.items.map((item) =>
+            String(item.id) === String(id)
+              ? { ...item, completed: !completed }
+              : item,
+          ),
+        })),
+      );
+    }
+  };
+
+  const updateReflection = async (reflection) => {
+    try {
+      await saveReflection(reflection);
+
+      setReflection(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // // ---------------- Article ----------------
 
@@ -336,16 +388,17 @@ export function AppProvider({ children }) {
   // ===========================================================
 
   async function refreshAll() {
+    if (syncing) return;
+
     setSyncing(true);
 
     await Promise.all([
-      // refreshPlanner(),
+      refreshPlanner(),
       // refreshCollege(),
       // refreshJobs(),
       // refreshDashboard(),
       // refreshArticles(),
       // refreshCodingQuestions()
-      await new Promise((resolve) => setTimeout(resolve, 1000)),
     ]);
 
     setLastSync(new Date());
@@ -362,6 +415,12 @@ export function AppProvider({ children }) {
         lastSync,
         refreshAll,
         syncing,
+
+        planner,
+        reflection,
+        toggleTask,
+        updateReflection,
+        setReflection,
 
         // // Planner
         // plannerTasks,
