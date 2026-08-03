@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.orm import Session, selectinload
 from datetime import date, datetime, timedelta, time
 from typing import Any
@@ -215,6 +215,11 @@ class CodingRepository(Repository):
                 .order_by(CodeSolution.started_at.desc())
             ).all()
         )
+
+    def get_path(self, question_id: str, started_at: datetime) -> str | None:
+        return self.db.scalar(
+            select(CodeSolution.github_path)
+            .where(and_(CodeSolution.question_id == question_id, CodeSolution.started_at == started_at)))
 
     def get_latest_attempt(self, question_id: str) -> CodeSolution | None:
         return self.db.scalar(

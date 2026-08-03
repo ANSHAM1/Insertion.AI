@@ -81,7 +81,7 @@ class GithubRepository:
         return fetched_questions
 
 
-    def fetch_all(self) -> list[tuple[date, list[Question]]]:
+    def fetch_all_questions(self) -> list[tuple[date, list[Question]]]:
 
         grouped: dict[date, list[Question]] = defaultdict(list)
 
@@ -98,6 +98,7 @@ class GithubRepository:
             grouped[generated_date].append(question)
 
         return sorted(grouped.items(), key=lambda x: x[0], reverse=True)
+        
 
     # Question
     # ------------------------------------------------------------------

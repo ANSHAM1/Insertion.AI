@@ -3,7 +3,7 @@ from langgraph.graph import START, END, StateGraph # type: ignore
 from src.agents.code_agent.evaluator.state import GeneratorState
 
 from src.agents.code_agent.evaluator.nodes import (prompt_builder_node, llm_inference_node,
-    validation_router, metadata_builder_node, upload_node)
+    terminate_router, metadata_builder_node, upload_node)
 
 
 
@@ -25,10 +25,10 @@ builder.add_edge("prompt", "llm")
 
 builder.add_conditional_edges(
     "llm",
-    validation_router,
+    terminate_router,
     {
-        "failed": END,
-        "save": "metadata",
+        "yes": END,
+        "no": "metadata",
     },
 )
 

@@ -27,6 +27,6 @@ class GeneratorState(TypedDict):
     metadata       : Metadata | None
 
     prompt         : PromptValue
-    llm_failed     : bool
+    terminate      : bool
 
     uploaded       : bool

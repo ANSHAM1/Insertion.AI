@@ -37,12 +37,12 @@ def fetch_github_node(state : GeneratorState) -> dict[str, Any]:
 
 
 
-def fetch_router(state : GeneratorState) -> str:
+def terminate_router(state : GeneratorState) -> str:
 
     if state["terminate"]:
-        return "end"
+        return "yes"
 
-    return "prompt"
+    return "no"
 
 
 
@@ -65,22 +65,13 @@ def llm_inference_node(state : GeneratorState) -> dict[str, Any]:
 
     if response is None:
         return {
-            "llm_failed" : True
+            "terminate" : True
         }
 
     return {
         "questions" : response,
-        "llm_failed"   : False
+        "terminate"   : False
     }
-
-
-
-def validation_router(state : GeneratorState) -> str:
-
-    if state["llm_failed"]:
-        return "failed"
-
-    return "save"
 
 
 

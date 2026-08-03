@@ -45,12 +45,12 @@ def llm_inference_node(state: GeneratorState) -> dict[str, Any]:
 
 
 
-def validation_router(state: GeneratorState) -> str:
+def terminate_router(state: GeneratorState) -> str:
 
-    if state["llm_failed"]:
-        return "failed"
+    if state["terminate"]:
+        return "yes"
 
-    return "save"
+    return "no"
 
 
 

@@ -2,8 +2,8 @@ from langgraph.graph import StateGraph, START, END # type: ignore
 
 from src.agents.code_agent.generator.state import GeneratorState
 
-from src.agents.code_agent.generator.nodes import (fetch_github_node, fetch_router, prompt_builder_node,
-    llm_inference_node, validation_router, upload_node)
+from src.agents.code_agent.generator.nodes import (fetch_github_node, terminate_router, prompt_builder_node,
+    llm_inference_node, upload_node)
 
 
 
@@ -24,10 +24,10 @@ builder.add_edge(START, "fetch")
 
 builder.add_conditional_edges(
     "fetch",
-    fetch_router,
+    terminate_router,
     {
-        "end": END,
-        "prompt": "prompt",
+        "yes": END,
+        "no": "prompt",
     },
 )
 
@@ -40,10 +40,10 @@ builder.add_edge(
 
 builder.add_conditional_edges(
     "llm",
-    validation_router,
+    terminate_router,
     {
-        "failed": END,
-        "save": "save",
+        "yes": END,
+        "no": "save",
     },
 )
 

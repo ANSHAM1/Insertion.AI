@@ -22,4 +22,3 @@ class GeneratorState(TypedDict):
     prompt        : PromptValue
 
     terminate     : bool
-    llm_failed    : bool

@@ -9,12 +9,18 @@ from src.config.state_manager import StateManager
 from src.database.connection import SessionLocal
 from src.database.enums import JobStatus
 
-from src.database.repository import (DailyScheduleRepository, RssRepository, CollegeDriveRepository, JobRepository)
+from src.database.repository import (DailyScheduleRepository, RssRepository, CollegeDriveRepository, JobRepository, CodingRepository)
 from src.database.models import (DailySchedule, CollegeDrive, Job, ReadingArticle)
+
+from src.fetcher.github.models import Question, FrontendMetadata, Metadata
+from src.fetcher.github.repository import GithubRepository
 
 from src.agents.planner_agent.workflow import planner_graph
 from src.agents.college_agent.workflow import college_graph
 from src.agents.job_agent.workflow import job_graph
+from src.agents.code_agent.evaluator.workflow import evaluator_graph
+from src.agents.code_agent.generator.workflow import generator_graph
+
 
 
 class InsertionAIDispatch(ABC):
@@ -312,9 +318,95 @@ class JobDispatch(InsertionAIDispatch):
 
         return self._helper(repo.get_all())
 
+
+
+class CodingGeneratorDispatch(InsertionAIDispatch):
+
+    def __init__(self, user_prompt: str = ""):
+        super().__init__()
+        self.user_prompt = user_prompt
         
 
+    def _helper(self, questions: list[tuple[date, list[Question]]]) -> dict[str, Any]:
 
+        return {
+            "questions": {
+                question[0] : [q.model_dump(mode="json") for q in question[1]]
+                for question in questions
+            }
+        }
+
+    def invoke(self):
+
+        state: dict[str, Any] = {
+            "curr_date": date.today(),
+            "timestamp": datetime.now(),
+
+            "app_state": self.app_state,
+
+            "questions": [],
+            "old_questions": [],
+
+            "user_prompt": self.user_prompt,
+            "prompt": "",
+
+            "terminate": False
+        }
+
+        generator_graph.invoke(state)  # type: ignore
+
+        git_repo = GithubRepository()
+
+        return self._helper(git_repo.fetch_all_questions())
+
+
+class CodingEvaluatorDispatch(InsertionAIDispatch):
+
+    def __init__(self, question: Question, generated_date: date, solution: str, frontend_meta: FrontendMetadata):
+        super().__init__()
+        self.question = question
+        self.generated_date = generated_date
+        self.solution = solution
+        self.frontend_meta = frontend_meta
+
+    def _helper(self, metadata : Metadata) -> dict[str, Any]:
+        return metadata.model_dump(mode="json")
+
+    def invoke(self) -> dict[str, Any]:
+
+        state: dict[str, Any] = {
+            "curr_date": date.today(),
+            "timestamp": datetime.now(),
+
+            "question": self.question,
+            "generated_date": self.generated_date,
+
+            "solution": self.solution,
+
+            "code_repo": CodingRepository(self.db),
+
+            "frontend_meta": self.frontend_meta,
+            "ai_metadata": None,
+            "metadata": None,
+
+            "prompt": "",
+            "llm_failed": False,
+
+            "uploaded": False,
+        }
+
+        evaluator_graph.invoke(state)  # type: ignore
+
+    
+        repo = CodingRepository(self.db)
+        github_path = repo.get_path(self.question.question_id, self.frontend_meta.started_at)
+
+        if not github_path:
+            raise RuntimeError("solution entry not present")
+
+        git_repo = GithubRepository()
+        
+        return self._helper(git_repo.fetch_metadata(github_path))
 
 
 def planner(command: str, payload: dict[Any, Any]):
