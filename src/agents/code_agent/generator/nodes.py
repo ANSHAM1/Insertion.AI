@@ -1,5 +1,6 @@
 from datetime import timedelta, datetime
 from typing import Any
+from uuid import uuid4
 
 from src.fetcher.github.repository import GithubRepository
 from src.fetcher.github.models import Question
@@ -19,20 +20,28 @@ def fetch_github_node(state : GeneratorState) -> dict[str, Any]:
 
     if last_sync and last_sync.date() ==  state["curr_date"]:
         return {
-            "terminate" : True
+            "terminate" : True,
+            "old_questions": []
         }
 
     fetcher = GithubRepository()
 
-    old_list : list[Question] = []
+    try:
+        old_questions: list[Question] = []
 
-    for day in range(5):
-        dir_items = fetcher.fetch_directory(state["curr_date"] - timedelta(days=day))
-        old_list.extend(dir_items)
+        for day in range(5):
+            generated_date = state["curr_date"] - timedelta(days=day)
+
+            old_questions.extend(
+                fetcher.fetch_directory(generated_date)
+            )
+
+    finally:
+        fetcher.close()
 
     return {
-        "terminate" : False,
-        "old_questions" : [question.summary for question in old_list],
+        "terminate": False,
+        "old_questions": [question.summary for question in old_questions],
     }
 
 
@@ -59,18 +68,31 @@ def prompt_builder_node(state : GeneratorState) -> dict[str, Any]:
 
 
 
+def generate_question_id() -> str:
+    return f"QT{uuid4().hex[:8].upper()}"
+
+
 def llm_inference_node(state : GeneratorState) -> dict[str, Any]:
 
-    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=QuestionsOutput, temperature=0)
-
+    # response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=QuestionsOutput, temperature=0)
+    try:
+         response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=QuestionsOutput, temperature=0)
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        raise
+    
     if response is None:
         return {
             "terminate" : True
         }
 
+    for question in response.questions:
+        question.question_id = generate_question_id()
+
     return {
-        "questions" : response,
-        "terminate"   : False
+        "questions": response.questions,
+        "terminate": False,
     }
 
 

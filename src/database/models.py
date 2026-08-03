@@ -139,7 +139,7 @@ class CodeSolution(Base):
 
     generated_date : Mapped[date]                = mapped_column(Date, primary_key=True)
     question_id    : Mapped[str]                 = mapped_column(String(32),  primary_key=True)
-    solution_name  : Mapped[str]                 = mapped_column(String(50), default=lambda: datetime.now(timezone.utc))
+    solution_name  : Mapped[str]                 = mapped_column(String(50), primary_key=True)
 
     title          : Mapped[str]                 = mapped_column(String(300), nullable=False)
 

@@ -16,7 +16,7 @@ class GeneratorState(TypedDict):
     app_state     : StateManager
 
     questions     : list[Question]
-    old_questions : list[Question]
+    old_questions : list[str]
 
     user_prompt   : PromptValue
     prompt        : PromptValue

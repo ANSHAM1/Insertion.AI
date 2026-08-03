@@ -1,113 +1,98 @@
-import { useEffect, useState } from "react";
+import { React } from "react";
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
-  CalendarClock,
   Code2,
+  CalendarDays,
   Briefcase,
-  GraduationCap,
-  FileText,
-  Sparkles,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Building2,
+  Menu,
+  MoreHorizontal,
+  RefreshCw,
 } from "lucide-react";
 
-// `hasNew` drives the small red indicator dot — swap these for real
-// "unseen item" flags once each section is backed by real data.
+import { useApp } from "../context/AppContext";
+
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, hasNew: false },
-  { to: "/planner", label: "Planner", icon: CalendarClock, hasNew: false },
-  { to: "/coding", label: "Coding", icon: Code2, hasNew: false },
-  { to: "/jobs", label: "Jobs", icon: Briefcase, hasNew: true },
-  { to: "/college-drives", label: "College Drives", icon: GraduationCap, hasNew: true },
-  { to: "/resume", label: "Resume", icon: FileText, hasNew: false },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/coding", label: "Coding", icon: Code2 },
+  { to: "/planner", label: "Planner", icon: CalendarDays },
+  { to: "/jobs", label: "Jobs", icon: Briefcase },
+  { to: "/college-drives", label: "College Drives", icon: Building2 },
 ];
 
-const STORAGE_KEY = "sidebar-collapsed";
-
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
-    } catch {
-      // ignore storage errors (e.g. private mode)
-    }
-  }, [collapsed]);
+  const { lastSync, refreshAll, syncing } = useApp();
 
   return (
-    <aside
-      className={`relative flex h-full shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200 ease-out ${
-        collapsed ? "w-[76px]" : "w-60"
-      }`}
-    >
-      <div
-        className={`flex items-center gap-2 px-6 py-6 ${
-          collapsed ? "justify-center px-0" : ""
-        }`}
-      >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
-          <Sparkles size={18} />
-        </div>
-
-        {!collapsed && (
-          <span className="whitespace-nowrap text-sm font-semibold tracking-wide text-text-primary">
-            InsertionAI
+    <aside className="w-64 shrink-0 h-full flex flex-col bg-[#0f0f11] border-r border-[#232326]">
+      <div className="flex items-center justify-between px-5 py-5">
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="InsertionAI Logo"
+            className="w-8 h-8 object-contain"
+          />
+          <span className="font-semibold text-white text-[15px]">
+            Insertion.AI
           </span>
-        )}
+        </div>
       </div>
 
-      <nav className={`flex flex-1 flex-col gap-1 ${collapsed ? "px-3" : "px-3"}`}>
-        {navItems.map(({ to, label, icon: Icon, hasNew }) => (
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto scrollbar-thin">
+        {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
-            end={to === "/"}
-            title={collapsed ? label : undefined}
+            end={end}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150 ${
-                collapsed ? "justify-center px-0 py-2.5" : ""
-              } ${
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                 isActive
-                  ? "bg-accent-soft text-accent"
-                  : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+                  ? "bg-orange-600/15 text-orange-500 font-medium border border-orange-600/30"
+                  : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
               }`
             }
           >
-            <span className="relative shrink-0">
-              <Icon size={17} strokeWidth={2} />
-              {hasNew && (
-                <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-danger" />
-              )}
-            </span>
-            {!collapsed && <span className="truncate">{label}</span>}
+            <Icon size={17} />
+            {label}
           </NavLink>
         ))}
       </nav>
 
-      <button
-        onClick={() => setCollapsed((prev) => !prev)}
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className={`mx-3 mb-3 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-text-primary ${
-          collapsed ? "justify-center px-0" : ""
-        }`}
-      >
-        {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-        {!collapsed && <span>Collapse</span>}
-      </button>
+      <div className="p-3 border-t border-[#232326]">
+        <button
+          onClick={refreshAll}
+          disabled={syncing}
+          className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-[#151518] border border-[#2a2a2d] hover:border-orange-500/40 hover:bg-[#1a1a1d] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          <div className="w-10 h-10 rounded-xl bg-orange-600/15 border border-orange-500/30 flex items-center justify-center">
+            <RefreshCw
+              size={18}
+              className={`text-orange-500 ${syncing ? "animate-spin" : ""}`}
+            />
+          </div>
 
-      {!collapsed && (
-        <div className="border-t border-border px-6 py-4 text-xs text-text-muted">
-          v0.1.0
-        </div>
-      )}
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-sm text-white font-medium">
+              {syncing ? "Syncing..." : "Last Sync"}
+            </p>
+
+            <p className="text-xs text-gray-400 truncate">
+              {syncing
+                ? "Refreshing all data..."
+                : lastSync
+                  ? lastSync.toLocaleString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : "Click to sync everything"}
+            </p>
+          </div>
+        </button>
+      </div>
     </aside>
   );
 }

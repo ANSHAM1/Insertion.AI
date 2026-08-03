@@ -42,7 +42,7 @@ class Question(BaseModel):
 
     topics         : list[str]
 
-    io_template    : str
+    io_template    : dict[str, str]
 
     time_limit     : int = Field(gt=0)
 

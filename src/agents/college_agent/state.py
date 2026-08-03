@@ -1,12 +1,12 @@
 from typing import TypedDict
 from datetime import date
+
 from langchain_core.prompt_values import PromptValue
 
 from src.config.state_manager import StateManager
-
-from src.fetcher.gmail.models import ParsedEmail
 from src.database.repository import CollegeDriveRepository
 
+from src.fetcher.gmail.models import ParsedEmail
 from src.validators.college_output import CollegeDriveOutput
 
 

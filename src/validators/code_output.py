@@ -7,7 +7,7 @@ from src.database.enums import CodingStatus
 
 class QuestionsOutput(BaseModel):
 
-    questions: list[Question] = Field(min_length=4, max_length=4)
+    questions: list[Question] = Field(min_length=1, max_length=1)
 
 
 class AIMetadataOutput(BaseModel):

@@ -9,7 +9,7 @@ from src.validators.code_output import AIMetadataOutput
 from src.database.repository import CodingRepository
 
 
-class GeneratorState(TypedDict):
+class EvaluatorState(TypedDict):
 
     curr_date      : date
     timestamp      : datetime

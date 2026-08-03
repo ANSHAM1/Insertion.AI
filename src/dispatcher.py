@@ -195,7 +195,6 @@ class CollegeDispatch(InsertionAIDispatch):
             "latest_hist_id" : latest_hist_id,
             "emails"         : [],
             "output"         : None,
-            "drives_repo"    : repo,
             "prompt"         : "",
             "llm_failed"     : False,
         }
@@ -326,14 +325,18 @@ class CodingGeneratorDispatch(InsertionAIDispatch):
         super().__init__()
         self.user_prompt = user_prompt
         
-
     def _helper(self, questions: list[tuple[date, list[Question]]]) -> dict[str, Any]:
-
         return {
-            "questions": {
-                question[0] : [q.model_dump(mode="json") for q in question[1]]
-                for question in questions
-            }
+            "items": [
+                {
+                    "generated_date": generated_date.isoformat(),
+                    "questions": [
+                        q.model_dump(mode="json")
+                        for q in questions
+                    ],
+                }
+                for generated_date, questions in questions
+            ]
         }
 
     def invoke(self):
@@ -362,12 +365,12 @@ class CodingGeneratorDispatch(InsertionAIDispatch):
 
 class CodingEvaluatorDispatch(InsertionAIDispatch):
 
-    def __init__(self, question: Question, generated_date: date, solution: str, frontend_meta: FrontendMetadata):
+    def __init__(self, question: dict[str, Any], generated_date: str, solution: str, frontend_meta: dict[str, Any]):
         super().__init__()
-        self.question = question
+        self.question = Question.model_validate(question)
         self.generated_date = generated_date
         self.solution = solution
-        self.frontend_meta = frontend_meta
+        self.frontend_meta = FrontendMetadata.model_validate(frontend_meta)
 
     def _helper(self, metadata : Metadata) -> dict[str, Any]:
         return metadata.model_dump(mode="json")
@@ -379,7 +382,7 @@ class CodingEvaluatorDispatch(InsertionAIDispatch):
             "timestamp": datetime.now(),
 
             "question": self.question,
-            "generated_date": self.generated_date,
+            "generated_date": date.fromisoformat(self.generated_date),
 
             "solution": self.solution,
 
@@ -510,11 +513,35 @@ def job(command: str, payload: dict[Any, Any]):
         app.close()
 
 
+def generator(command: str, payload: dict[Any, Any]):
+    app = CodingGeneratorDispatch()
+
+    try:
+        if command == "generator":
+            return app.invoke()
+
+        raise ValueError(f"Unknown generator command: {command}")
+
+    finally:
+        app.close()
 
 
+def evaluator(command: str, payload: dict[Any, Any]):
+    app = CodingEvaluatorDispatch(
+        question=payload["question"],
+        generated_date=payload["generated_date"],
+        solution=payload["solution"],
+        frontend_meta=payload["frontend_meta"]
+    )
 
+    try:
+        if command == "evaluator":
+            return app.invoke()
 
+        raise ValueError(f"Unknown evaluator command: {command}")
 
+    finally:
+        app.close()
 
 
 

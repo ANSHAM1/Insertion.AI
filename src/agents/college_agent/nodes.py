@@ -1,14 +1,14 @@
 from typing import Any
 
 from src.database.models import CollegeDrive
+
+from src.ai.llm_factory import FailoverLLM
 from src.agents.college_agent.state import CollegeState
 
-from src.prompts.college_prompt import college_prompt
-from src.ai.llm_factory import FailoverLLM
-
-from src.validators.college_output import CollegeDriveOutput
-
 from src.services.gmail_service import fetch_emails
+
+from src.prompts.college_prompt import college_prompt
+from src.validators.college_output import CollegeDriveOutput
 
 
 
@@ -110,9 +110,6 @@ def save_node(state: CollegeState) -> dict[str, Any]:
         state["drives_repo"].rollback()
         raise
 
-    state["app_state"].GMAIL_SYNC(
-        account="college",
-        latest_hist_id=state["latest_hist_id"],
-    )
+    state["app_state"].GMAIL_SYNC(account="college", latest_hist_id=state["latest_hist_id"])
 
     return {}

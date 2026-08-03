@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.dispatcher import planner, college, job, article
+from src.dispatcher import planner, college, job, article, evaluator, generator
 from src.dashboard import dashboard
 
 import sys, json
@@ -31,6 +31,9 @@ if __name__ == "__main__":
         "job_status" : job,
         "job_remove" : job,
         "new_jobs" : job,
+
+        "evaluator" : evaluator,
+        "generator" : generator,
 
         "dashboard" : dashboard
     }

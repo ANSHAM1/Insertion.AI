@@ -40,12 +40,21 @@ class GithubStorage:
         return response.json()
 
     def list_directory(self, path: str) -> list[dict[str, Any]]:
-        response = self.client.get(
-            f"contents/{path}",
-            params={
-                "ref": self.client.branch,
-            },
-        )
+
+        try:
+            response = self.client.get(
+                f"contents/{path}",
+                params={
+                    "ref": self.client.branch,
+                },
+            )
+
+        except httpx.HTTPStatusError as e:
+
+            if e.response.status_code == 404:
+                return []
+
+            raise
 
         data = response.json()
 

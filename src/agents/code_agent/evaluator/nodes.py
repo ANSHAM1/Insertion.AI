@@ -1,7 +1,7 @@
 from typing import Any
 from datetime import timedelta
 
-from src.agents.code_agent.evaluator.state import GeneratorState
+from src.agents.code_agent.evaluator.state import EvaluatorState
 from src.prompts.code_evaluator_prompt import code_evaluator_prompt
 
 from src.ai.llm_factory import FailoverLLM
@@ -14,12 +14,13 @@ from src.fetcher.github.repository import GithubRepository
 from src.database.models import CodeSolution
 
 
-def prompt_builder_node(state: GeneratorState) -> dict[str, Any]:
+def prompt_builder_node(state: EvaluatorState) -> dict[str, Any]:
 
     prompt = code_evaluator_prompt.invoke(
         {
             "question": state["question"],
             "solution": state["solution"],
+            "frontend_metadata": state["frontend_meta"],
         }
     )
 
@@ -29,23 +30,23 @@ def prompt_builder_node(state: GeneratorState) -> dict[str, Any]:
 
 
 
-def llm_inference_node(state: GeneratorState) -> dict[str, Any]:
+def llm_inference_node(state: EvaluatorState) -> dict[str, Any]:
 
     response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=AIMetadataOutput, temperature=0)
 
     if response is None:
         return {
-            "llm_failed": True,
+            "terminate": True,
         }
 
     return {
         "metadata": response,
-        "llm_failed": False,
+        "terminate": False,
     }
 
 
 
-def terminate_router(state: GeneratorState) -> str:
+def terminate_router(state: EvaluatorState) -> str:
 
     if state["terminate"]:
         return "yes"
@@ -54,7 +55,7 @@ def terminate_router(state: GeneratorState) -> str:
 
 
 
-def metadata_builder_node(state: GeneratorState) -> dict[str, Any]:
+def metadata_builder_node(state: EvaluatorState) -> dict[str, Any]:
 
     ai = state["metadata"]
 
@@ -84,7 +85,7 @@ def metadata_builder_node(state: GeneratorState) -> dict[str, Any]:
 
 
 
-def upload_node(state: GeneratorState) -> dict[str, Any]:
+def upload_node(state: EvaluatorState) -> dict[str, Any]:
 
     metadata = state["metadata"]
 
@@ -117,9 +118,10 @@ def upload_node(state: GeneratorState) -> dict[str, Any]:
                     title          = state["question"].title,
                     difficulty     = state["question"].difficulty,
                     status         = metadata.status,
-                    language       = metadata.language,
+                    language       = metadata.language.value,
                     score          = metadata.score,
                     time_taken     = metadata.time_taken,
+                    time_limit     = state["question"].time_limit,
                     started_at     = metadata.started_at,
                     completed_at   = metadata.started_at + timedelta(minutes=metadata.time_taken),
                     github_path    = github_path
@@ -128,12 +130,19 @@ def upload_node(state: GeneratorState) -> dict[str, Any]:
 
         dbrepo.commit()
 
-    except:
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
 
         dbrepo.rollback()
-        return {
-            "uploaded" : False
-        }
+
+        raise e
+
+        # dbrepo.rollback()
+        # return {
+        #     "uploaded" : False
+        # }
 
     return {
         "uploaded": True,
