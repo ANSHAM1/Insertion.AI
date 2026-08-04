@@ -4,15 +4,18 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   MapPin,
-  IndianRupee,
   Sparkles,
   X,
   Trash2,
   ExternalLink,
   Briefcase,
   ChevronDown,
+  GraduationCap,
+  Building2,
 } from "lucide-react";
 import { SectionCard } from "../components/UI";
+
+import DOMPurify from "dompurify";
 
 import { useApp } from "../context/AppContext";
 
@@ -90,9 +93,9 @@ const STATUS_CONFIG = {
 const SORT_OPTIONS = [
   { key: "posted_desc", label: "Newest first" },
   { key: "posted_asc", label: "Oldest first" },
-  { key: "salary_desc", label: "Salary: High to Low" },
-  { key: "salary_asc", label: "Salary: Low to High" },
   { key: "match_desc", label: "Best match" },
+  { key: "comp_desc", label: "Compensation: High to Low" },
+  { key: "prestige_desc", label: "Prestige: High to Low" },
 ];
 
 function initials(name) {
@@ -100,10 +103,11 @@ function initials(name) {
   return name.trim().slice(0, 2).toUpperCase();
 }
 
-function formatSalary(min, max) {
-  if (!min && !max) return "Not disclosed";
-  if (min && max) return `₹${min} - ₹${max}`;
-  return `₹${min ?? max}`;
+function experienceLabel(min, max) {
+  if (min == null && max == null) return null;
+  if (min != null && max != null) return `${min}-${max} yrs`;
+  if (min != null) return `${min}+ yrs`;
+  return `Up to ${max} yrs`;
 }
 
 function timeAgo(iso) {
@@ -180,6 +184,7 @@ function StatusDropdown({ status, onChange }) {
 
 function JobCard({ job, deleting, onOpen, onDelete }) {
   const cfg = STATUS_CONFIG[job.status] ?? STATUS_CONFIG.FOUND;
+  const exp = experienceLabel(job.experience_min, job.experience_max);
 
   return (
     <div
@@ -205,6 +210,11 @@ function JobCard({ job, deleting, onOpen, onDelete }) {
           >
             {cfg.label}
           </span>
+          {job.matched_percentage != null && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-orange-600/30 bg-orange-600/10 text-orange-400 shrink-0">
+              {job.matched_percentage}% match
+            </span>
+          )}
         </div>
         <p className="text-xs text-gray-500 mt-0.5 truncate">
           {job.company}
@@ -215,16 +225,14 @@ function JobCard({ job, deleting, onOpen, onDelete }) {
             </>
           )}
         </p>
-        {job.experience_min != null && (
-          <p className="text-[11px] text-gray-600 mt-0.5 flex items-center gap-1">
-            <Briefcase size={11} /> {job.experience_min}+ yrs exp
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1 text-sm text-gray-300">
-        <IndianRupee size={13} className="text-gray-500" />
-        {formatSalary(job.salary_min, job.salary_max).replace("₹", "")}
+        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+          {job.job_type && (
+            <span className="text-[11px] text-gray-600 flex items-center gap-1">
+              <Briefcase size={11} /> {job.job_type}
+            </span>
+          )}
+          {exp && <span className="text-[11px] text-gray-600">{exp}</span>}
+        </div>
       </div>
 
       <span className="text-xs text-gray-600 w-16 text-right">
@@ -256,22 +264,51 @@ function DetailRow({ label, value }) {
   );
 }
 
-function SkillPills({ skills, tone = "default" }) {
+function SkillPills({ skills, requiredSet, tone = "default" }) {
   if (!skills || skills.length === 0) return null;
-  const classes =
-    tone === "missing"
-      ? "bg-red-500/10 border-red-500/25 text-red-400"
-      : "bg-[#1f1f22] border-[#2c2c30] text-gray-300";
+
+  const missingClasses = "bg-red-500/10 border-red-500/25 text-red-400";
+  const requiredClasses =
+    "bg-orange-500/10 border-orange-500/25 text-orange-400";
+  const defaultClasses = "bg-[#1f1f22] border-[#2c2c30] text-gray-300";
+
+  const uniqueSkills = [...new Set(skills)];
+
   return (
     <div className="flex flex-wrap gap-1.5 mt-1.5">
-      {skills.map((s) => (
-        <span
-          key={s}
-          className={`text-[11px] px-2 py-1 rounded-md border ${classes}`}
-        >
-          {s}
-        </span>
-      ))}
+      {uniqueSkills.map((s, i) => {
+        const classes =
+          tone === "missing"
+            ? missingClasses
+            : requiredSet?.has(s)
+              ? requiredClasses
+              : defaultClasses;
+
+        return (
+          <span
+            key={`${s}-${i}`}
+            className={`text-[11px] px-2 py-1 rounded-md border ${classes}`}
+          >
+            {s}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScoreBar({ label, value }) {
+  if (value === null || value === undefined) return null;
+  const pct = Math.max(0, Math.min(100, value));
+  return (
+    <div>
+      <div className="flex justify-between text-xs text-gray-400 mb-1">
+        <span>{label}</span>
+        <span className="text-gray-300">{value}</span>
+      </div>
+      <div className="w-full h-1.5 bg-[#232326] rounded-full overflow-hidden">
+        <div className="h-full bg-orange-500/80" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
@@ -279,6 +316,7 @@ function SkillPills({ skills, tone = "default" }) {
 function JobModal({ job, onClose, onStatusChange }) {
   if (!job) return null;
   const cfg = STATUS_CONFIG[job.status] ?? STATUS_CONFIG.FOUND;
+  const exp = experienceLabel(job.experience_min, job.experience_max);
 
   return (
     <div
@@ -287,113 +325,176 @@ function JobModal({ job, onClose, onStatusChange }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg max-h-[85vh] overflow-y-auto bg-[#141416] border border-[#232326] rounded-2xl shadow-2xl"
+        className="w-full max-w-4xl max-h-[88vh] overflow-hidden bg-[#141416] border border-[#232326] rounded-2xl shadow-2xl flex flex-col"
       >
-        <div className="flex items-start justify-between p-5 border-b border-[#1f1f22]">
+        {/* Header */}
+        <div className="flex items-start justify-between p-5 border-b border-[#1f1f22] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-xl bg-orange-600/20 border border-orange-600/30 flex items-center justify-center text-orange-400 font-bold shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-orange-600/20 border border-orange-600/30 flex items-center justify-center text-orange-400 font-bold shrink-0">
               {initials(job.company)}
             </div>
             <div className="min-w-0">
               <p
-                className="text-base font-semibold text-white truncate"
+                className="text-lg font-semibold text-white truncate"
                 title={job.role}
               >
                 {job.role}
               </p>
-              <p className="text-xs text-gray-500 truncate">{job.company}</p>
+              <p className="text-sm text-gray-500 truncate flex items-center gap-1">
+                <Building2 size={12} /> {job.company}
+                {job.location && (
+                  <>
+                    {" "}
+                    • <MapPin size={12} className="inline -mt-0.5" />{" "}
+                    {job.location}
+                  </>
+                )}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-gray-500 shrink-0"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <span
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${cfg.classes}`}
-            >
-              Current status
-            </span>
+          <div className="flex items-center gap-3 shrink-0">
             <StatusDropdown
               status={job.status || "FOUND"}
               onChange={(s) => onStatusChange(job.id, s)}
             />
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/5 text-gray-500"
+            >
+              <X size={16} />
+            </button>
           </div>
-
-          {job.description && (
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Description</p>
-              <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {job.description}
-              </p>
-            </div>
-          )}
-
-          <div>
-            <DetailRow label="Employment Type" value={job.employment_type} />
-            <DetailRow label="Recruitment Type" value={job.recruitment_type} />
-            <DetailRow label="Location" value={job.location} />
-            <DetailRow
-              label="Salary Range"
-              value={formatSalary(job.salary_min, job.salary_max)}
-            />
-            <DetailRow
-              label="Experience"
-              value={
-                job.experience_min != null ? `${job.experience_min}+ yrs` : null
-              }
-            />
-            <DetailRow
-              label="Posted"
-              value={
-                job.posted_at
-                  ? new Date(job.posted_at).toLocaleDateString("en-IN")
-                  : null
-              }
-            />
-            <DetailRow
-              label="Applied"
-              value={
-                job.applied_at
-                  ? new Date(job.applied_at).toLocaleDateString("en-IN")
-                  : null
-              }
-            />
-            <DetailRow
-              label="Match"
-              value={
-                job.matched_percentage != null
-                  ? `${job.matched_percentage}%`
-                  : null
-              }
-            />
-            <DetailRow
-              label="Matched Resume"
-              value={job.matched_resume ?? null}
-            />
-          </div>
-
-          {job.required_skills?.length > 0 && (
-            <div>
-              <p className="text-xs text-gray-500">Required Skills</p>
-              <SkillPills skills={job.required_skills} />
-            </div>
-          )}
-
-          {job.missing_skills?.length > 0 && (
-            <div>
-              <p className="text-xs text-gray-500">Missing Skills</p>
-              <SkillPills skills={job.missing_skills} tone="missing" />
-            </div>
-          )}
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-5 border-t border-[#1f1f22]">
+        {/* Two-column body */}
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#1f1f22]">
+          {/* Left: core info */}
+          <div className="p-5 space-y-4">
+            {job.description && (
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Description</p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(job.description),
+                    }}
+                  />
+                </p>
+              </div>
+            )}
+
+            {job.requirements_summary && (
+              <div>
+                <p className="text-xs text-gray-500 mb-1">
+                  Requirements Summary
+                </p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {job.requirements_summary}
+                </p>
+              </div>
+            )}
+
+            <div>
+              <DetailRow label="Job Type" value={job.job_type} />
+              <DetailRow label="Location" value={job.location} />
+              <DetailRow label="Location Type" value={job.location_type} />
+              <DetailRow
+                label="Experience Level"
+                value={job.experience_level}
+              />
+              <DetailRow label="Experience Range" value={exp} />
+              <DetailRow label="Education Level" value={job.education_level} />
+              <DetailRow
+                label="Posted"
+                value={
+                  job.posted_at
+                    ? new Date(job.posted_at).toLocaleDateString("en-IN")
+                    : null
+                }
+              />
+              <DetailRow
+                label="Status Updated"
+                value={
+                  job.status_date
+                    ? new Date(job.status_date).toLocaleDateString("en-IN")
+                    : null
+                }
+              />
+            </div>
+
+            {job.education_level && (
+              <p className="text-[11px] text-gray-600 flex items-center gap-1">
+                <GraduationCap size={12} /> {job.education_level}
+              </p>
+            )}
+          </div>
+
+          {/* Right: skills + scores */}
+          <div className="p-5 space-y-5">
+            <div>
+              <p className="text-xs text-gray-500">Match</p>
+              <div className="mt-1.5 space-y-2">
+                <ScoreBar label="Resume Match" value={job.matched_percentage} />
+                {job.matched_resume && (
+                  <p className="text-xs text-gray-400">
+                    Matched Resume: {job.matched_resume}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500">Scores</p>
+              <ScoreBar label="Flexibility" value={job.flexibility_score} />
+              <ScoreBar
+                label="Compensation Value"
+                value={job.compensation_value_score}
+              />
+              <ScoreBar label="Prestige" value={job.prestige_score} />
+              <ScoreBar label="Growth" value={job.growth_score} />
+            </div>
+
+            {(job.required_skills?.length > 0 || job.skills?.length > 0) && (
+              <div>
+                <p className="text-xs text-gray-500 flex items-center gap-2">
+                  Skills
+                  {job.required_skills?.length > 0 && (
+                    <span className="flex items-center gap-1 text-[10px] text-orange-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500/70" />{" "}
+                      required
+                    </span>
+                  )}
+                </p>
+                <SkillPills
+                  skills={[
+                    ...new Set([
+                      ...(job.required_skills ?? []),
+                      ...(job.skills ?? []),
+                    ]),
+                  ]}
+                  requiredSet={new Set(job.required_skills ?? [])}
+                />
+              </div>
+            )}
+
+            {job.technologies?.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-500">Technologies</p>
+                <SkillPills skills={job.technologies} />
+              </div>
+            )}
+
+            {job.missing_skills?.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-500">Missing Skills</p>
+                <SkillPills skills={job.missing_skills} tone="missing" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 p-5 border-t border-[#1f1f22] shrink-0">
           {job.apply_url ? (
             <button
               onClick={() => openExternal(job.apply_url)}
@@ -416,11 +517,6 @@ export default function Jobs() {
   const { jobs, jobLoading, updateJobStatus, deleteJob, generateJobs } =
     useApp();
 
-  // Local, optimistic mirror of context jobs. We only ever *replace* this
-  // from context when context actually has a real array — never on a
-  // transient null/undefined mid-refetch — so a background refetch
-  // triggered by delete/generate/status-change can never blank this list
-  // out or momentarily desync it from what's on screen.
   const [localJobs, setLocalJobs] = useState(jobs ?? []);
   const [deletingIds, setDeletingIds] = useState(() => new Set());
 
@@ -447,7 +543,7 @@ export default function Jobs() {
       await deleteJob(jobId);
     } catch (err) {
       console.error("Failed to delete job:", err);
-      setLocalJobs(snapshot); // revert — deletion didn't actually happen
+      setLocalJobs(snapshot);
     } finally {
       setDeletingIds((prev) => {
         const next = new Set(prev);
@@ -471,9 +567,6 @@ export default function Jobs() {
   const handleStatusChange = async (jobId, newStatus) => {
     const previous = localJobs;
 
-    // Optimistic update — reflected instantly in both the card behind the
-    // modal AND inside the modal itself (see modalJob below), instead of
-    // only showing up once the modal is closed and reopened.
     setLocalJobs((list) =>
       list.map((j) =>
         j.id === jobId
@@ -486,14 +579,10 @@ export default function Jobs() {
       await updateJobStatus(jobId, newStatus);
     } catch (err) {
       console.error("Failed to update job status:", err);
-      setLocalJobs(previous); // revert — the update didn't actually happen
+      setLocalJobs(previous);
     }
   };
 
-  // Feed the modal the *live* version of the job from localJobs (falling
-  // back to the raw selectedJob only if it's somehow no longer in the
-  // list) instead of the frozen object captured when it was opened. This
-  // is what makes status changes show up in the popup immediately.
   const modalJob = selectedJob
     ? (localJobs.find((j) => j.id === selectedJob.id) ?? selectedJob)
     : null;
@@ -519,18 +608,15 @@ export default function Jobs() {
       switch (sortKey) {
         case "posted_asc":
           return new Date(a.posted_at ?? 0) - new Date(b.posted_at ?? 0);
-        case "salary_desc":
-          return (
-            (b.salary_max ?? b.salary_min ?? 0) -
-            (a.salary_max ?? a.salary_min ?? 0)
-          );
-        case "salary_asc":
-          return (
-            (a.salary_min ?? a.salary_max ?? 0) -
-            (b.salary_min ?? b.salary_max ?? 0)
-          );
         case "match_desc":
           return (b.matched_percentage ?? 0) - (a.matched_percentage ?? 0);
+        case "comp_desc":
+          return (
+            (b.compensation_value_score ?? 0) -
+            (a.compensation_value_score ?? 0)
+          );
+        case "prestige_desc":
+          return (b.prestige_score ?? 0) - (a.prestige_score ?? 0);
         case "posted_desc":
         default:
           return new Date(b.posted_at ?? 0) - new Date(a.posted_at ?? 0);
@@ -546,27 +632,16 @@ export default function Jobs() {
     const applied = list.filter((j) =>
       ["APPLIED", "OA", "INTERVIEW", "HR", "OFFER"].includes(j.status),
     ).length;
-
     const oa = list.filter((j) =>
       ["OA", "INTERVIEW", "HR", "OFFER"].includes(j.status),
     ).length;
-
     const interview = list.filter((j) =>
       ["INTERVIEW", "HR", "OFFER"].includes(j.status),
     ).length;
-
     const hr = list.filter((j) => ["HR", "OFFER"].includes(j.status)).length;
-
     const offers = list.filter((j) => j.status === "OFFER").length;
 
-    return {
-      total: list.length,
-      applied,
-      oa,
-      interview,
-      hr,
-      offers,
-    };
+    return { total: list.length, applied, oa, interview, hr, offers };
   }, [localJobs]);
 
   return (
@@ -675,7 +750,7 @@ export default function Jobs() {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowSort(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-48 bg-[#141416] border border-[#232326] rounded-xl shadow-xl z-20 overflow-hidden py-1">
+                  <div className="absolute right-0 mt-2 w-52 bg-[#141416] border border-[#232326] rounded-xl shadow-xl z-20 overflow-hidden py-1">
                     {SORT_OPTIONS.map((o) => (
                       <button
                         key={o.key}
@@ -728,7 +803,6 @@ export default function Jobs() {
               <p className="text-xs text-gray-500 mt-2">Total</p>
               <p className="text-xs text-gray-400">Applied</p>
             </div>
-
             <div className="card p-4 flex flex-col items-center justify-center">
               <p className="text-2xl font-bold text-white leading-none tabular-nums">
                 {stats.interview}
@@ -736,7 +810,6 @@ export default function Jobs() {
               <p className="text-xs text-gray-500 mt-2">Total</p>
               <p className="text-xs text-gray-400">Interviews</p>
             </div>
-
             <div className="card p-4 flex flex-col items-center justify-center">
               <p className="text-2xl font-bold text-orange-500 leading-none tabular-nums">
                 {stats.offers}
@@ -761,11 +834,7 @@ export default function Jobs() {
                   value: stats.applied,
                   color: STATUS_CONFIG.APPLIED.bar,
                 },
-                {
-                  label: "OA",
-                  value: stats.oa,
-                  color: STATUS_CONFIG.OA.bar,
-                },
+                { label: "OA", value: stats.oa, color: STATUS_CONFIG.OA.bar },
                 {
                   label: "Interview",
                   value: stats.interview,
@@ -787,14 +856,11 @@ export default function Jobs() {
                     <span>{item.label}</span>
                     <span>{item.value}</span>
                   </div>
-
                   <div className="w-full h-1.5 bg-[#232326] rounded-full overflow-hidden">
                     <div
                       className={`h-full ${item.color}`}
                       style={{
-                        width: `${
-                          stats.total ? (item.value / stats.total) * 100 : 0
-                        }%`,
+                        width: `${stats.total ? (item.value / stats.total) * 100 : 0}%`,
                       }}
                     />
                   </div>

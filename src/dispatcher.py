@@ -254,29 +254,40 @@ class JobDispatch(InsertionAIDispatch):
         return {
             "items": [
                 {
-                    "id"                 : job.id,
-                    "company"            : job.company,
-                    "role"               : job.role,
-                    "description"        : job.description,
-                    "employment_type"    : (job.employment_type.value if job.employment_type else None),
-                    "recruitment_type"   : (job.recruitment_type.value if job.recruitment_type else None),
-                    "location"           : job.location,
-                    "salary_min"         : job.salary_min,
-                    "salary_max"         : job.salary_max,
-                    "apply_url"          : job.apply_url,
-                    "experience_min"     : job.experience_min,
-                    "posted_at"          : (job.posted_at.isoformat() if job.posted_at else None),
-                    "applied_at"         : (job.applied_at.isoformat() if job.applied_at else None),
-                    "status"             : job.status.value,
-                    "status_date"        : (job.status_date.isoformat() if job.status_date else None),
-                    "required_skills"    : job.required_skills,
-                    "missing_skills"     : job.missing_skills,
-                    "matched_resume"     : job.matched_resume,
-                    "matched_percentage" : job.matched_percentage
+                    "id"                       : job.id,
+                    "company"                  : job.company,
+                    "role"                     : job.role,
+                    "description"              : job.description,
+                    "requirements_summary"     : job.requirements_summary,
+                    "job_type"                 : (job.job_type if job.job_type else None),
+                    "location"                 : job.location,
+                    "location_type"            : job.location_type,
+                    "experience_level"         : job.experience_level,
+                    "experience_min"           : job.experience_min,
+                    "experience_max"           : job.experience_max,
+                    "education_level"          : job.education_level,
+                    "skills"                   : job.skills,
+                    "technologies"             : job.technologies,
+                    "required_skills"          : job.required_skills,
+                    "missing_skills"           : job.missing_skills,
+                    "matched_resume"           : job.matched_resume,
+                    "matched_percentage"       : job.matched_percentage,
+                    "flexibility_score"        : job.flexibility_score,
+                    "compensation_value_score" : job.compensation_value_score,
+                    "prestige_score"           : job.prestige_score,
+                    "growth_score"             : job.growth_score,
+                    "apply_url"                : job.apply_url,
+                    "posted_at"                : (job.posted_at.isoformat() if job.posted_at else None),
+                    "status"                   : job.status.value,
+                    "status_date"              : (job.status_date.isoformat() if job.status_date else None),
                 }
-                for job in sorted(jobs, key=lambda x: (x.posted_at or date.max, x.company.lower()))
+                for job in sorted(
+                    jobs,
+                    key=lambda x: (x.posted_at or date.max, x.company.lower()),
+                    reverse=True,  # newest jobs first
+                )
             ]
-        }  # type: ignore 
+        }
 
     def invoke(self):
 
@@ -296,10 +307,11 @@ class JobDispatch(InsertionAIDispatch):
             "job_repo": repo,
 
             "prompt": "",
-            "llm_failed": False,
+            "terminate": False,
         }
 
         job_graph.invoke(state)  # type: ignore
+        
         return self._helper(repo.get_all())
 
     def update_status(self, job_id: str, status: str) -> None:
@@ -311,7 +323,6 @@ class JobDispatch(InsertionAIDispatch):
         if job is None:
             raise ValueError(f"Job '{job_id}' not found.")
 
-        job.applied_at = date.today()
         job.status = JobStatus(status)
         job.status_date = date.today()
         repo.commit()

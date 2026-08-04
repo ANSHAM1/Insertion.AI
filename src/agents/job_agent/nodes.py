@@ -1,14 +1,15 @@
 from typing import Any
+from datetime import date
 
 from src.database.models import Job
 
 from src.agents.job_agent.state import JobState
-from src.services.job_service import fetch_jobs
+from src.services.hirebase_service import fetch_jobs
 
 from src.prompts.job_prompt import job_prompt
 from src.ai.llm_factory import FailoverLLM
 
-from src.validators.job_output import JobOutput
+from src.validators.Hirebase_output import JobModelOutput
 
 
 
@@ -16,25 +17,38 @@ def search_jobs_node(state: JobState) -> dict[str, Any]:
 
     last_sync = state["app_state"].JOB_STATE()
 
-    jobs = fetch_jobs(last_sync)
+    if last_sync and last_sync.date() == date.today():
+        return {
+            "terminate" : True
+        }
+
+    jobs = fetch_jobs(limit=20)
 
     if not jobs:
         return {
-            "jobs": []
+            "terminate" : True
         }
     
     duplicate_ids = set(state["job_repo"].bulk_exists([job.id for job in jobs]))
 
     new_jobs = [job for job in jobs if job.id not in duplicate_ids]
 
+    if not new_jobs:
+        return {
+            "terminate": True
+        }
+
     return {
-        "jobs" :  new_jobs
+        "jobs"      :  new_jobs,
+        "terminate" : False
     }
 
 
 
-def valid_jobs_router(state: JobState) -> str:
-    return "build_prompt" if state["jobs"] else "end"
+def terminate_router(state: JobState) -> str:
+    if state["terminate"]:
+        return "true"
+    return "false"
 
 
 
@@ -55,22 +69,17 @@ def build_prompt_node(state: JobState) -> dict[str, Any]:
 
 def llm_inference_node(state: JobState) -> dict[str, Any]:
 
-    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=JobOutput, temperature=0)
+    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=JobModelOutput, temperature=0)
 
     if response is None:
         return {
-            "llm_failed" : True
+            "terminate" : True
         }
 
     return {
         "output"     : response,
-        "llm_failed" : False
+        "terminate" : False
     }
-
-
-
-def llm_status_router(state: JobState) -> str:
-    return "save" if not state["llm_failed"] else "end"
 
 
 
@@ -87,29 +96,30 @@ def save_node(state: JobState) -> dict[str, Any]:
 
             state["job_repo"].add(
                 Job(
-                    id                 = fetched_job.id,
-
-                    company            = approved.company,
-                    description        = approved.description,
-                    role               = approved.role,
-
-                    employment_type    = approved.employment_type,
-                    recruitment_type   = approved.recruitment_type,
-
-                    location           = fetched_job.location,
-                    salary_min         = fetched_job.salary_min,
-                    salary_max         = fetched_job.salary_max,
-
-                    apply_url          = fetched_job.apply_url,
-                    experience_min     = approved.experience_min,
-
-                    posted_at          = fetched_job.posted_at,
-
-                    required_skills    = approved.required_skills,
-                    missing_skills     = approved.missing_skills,
-
-                    matched_resume     = approved.matched_resume,
-                    matched_percentage = approved.matched_percentage
+                    id                       = fetched_job.id,
+                    company                  = fetched_job.company,
+                    role                     = fetched_job.title,
+                    description              = fetched_job.description,
+                    requirements_summary     = fetched_job.requirements_summary,
+                    job_type                 = fetched_job.job_type,
+                    location                 = fetched_job.location,
+                    location_type            = fetched_job.location_type,
+                    experience_level         = approved.experience_level,
+                    experience_min           = fetched_job.experience.min,
+                    experience_max           = fetched_job.experience.max,
+                    education_level          = fetched_job.education_level,
+                    skills                   = fetched_job.skills,
+                    technologies             = fetched_job.technologies,
+                    required_skills          = approved.required_skills,
+                    missing_skills           = approved.missing_skills,
+                    matched_resume           = approved.matched_resume,
+                    matched_percentage       = approved.matched_percentage,
+                    flexibility_score        = fetched_job.flexibility_score,
+                    compensation_value_score = fetched_job.compensation_value_score,
+                    prestige_score           = fetched_job.prestige_score,
+                    growth_score             = fetched_job.growth_score,
+                    apply_url                = fetched_job.apply_url,
+                    posted_at                = fetched_job.posted_at,
                 )
             )
 

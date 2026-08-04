@@ -11,37 +11,48 @@ class Base(DeclarativeBase):
     pass
 
 
+
 class Job(Base):
     __tablename__ = "jobs"
 
-    id                 : Mapped[str]                    = mapped_column(String(128), primary_key=True)
+    id                       : Mapped[str]          = mapped_column(String(128), primary_key=True)
 
-    company            : Mapped[str]                    = mapped_column(String(200), index=True)
-    description        : Mapped[str | None]             = mapped_column(Text, nullable=True)
-    role               : Mapped[str]                    = mapped_column(String(200), index=True)
-    employment_type    : Mapped[EmploymentType | None]  = mapped_column(SqlEnum(EmploymentType), nullable=True)
-    recruitment_type   : Mapped[RecruitmentType | None] = mapped_column(SqlEnum(RecruitmentType), nullable=True)
-    
-    location           : Mapped[str | None]             = mapped_column(String(150), nullable=True)
-    salary_min         : Mapped[str | None]             = mapped_column(String(100), nullable=True)
-    salary_max         : Mapped[str | None]             = mapped_column(String(100), nullable=True)
-    apply_url          : Mapped[str | None]             = mapped_column(String(600), nullable=True)
-    experience_min     : Mapped[int | None]             = mapped_column(nullable=True)
+    company                  : Mapped[str]          = mapped_column(String(200), index=True)
+    role                     : Mapped[str]          = mapped_column(String(200), index=True)
+    description              : Mapped[str | None]   = mapped_column(Text, nullable=True)
+    requirements_summary     : Mapped[str | None]   = mapped_column(Text, nullable=True)
 
-    posted_at          : Mapped[date | None]            = mapped_column(Date, nullable=True)
-    applied_at         : Mapped[date | None]            = mapped_column(Date, nullable=True)
-    status             : Mapped[JobStatus]              = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
-    status_date        : Mapped[date]                   = mapped_column(Date, default=lambda: datetime.now(timezone.utc).date())
+    job_type                 : Mapped[str]          = mapped_column(String(100), index=True)
 
-    required_skills    : Mapped[list[str]]              = mapped_column(JSON, default=list, nullable=False)
-    missing_skills     : Mapped[list[str]]              = mapped_column(JSON, default=list, nullable=False)
+    location                 : Mapped[str | None]   = mapped_column(String(150), nullable=True)
+    location_type            : Mapped[str | None]   = mapped_column(String(50), nullable=True)
 
-    matched_resume     : Mapped[str]                    = mapped_column(String(100), index=True)
-    matched_percentage : Mapped[float]                  = mapped_column(FLOAT, nullable=False) 
+    experience_level         : Mapped[str | None]   = mapped_column(String(50), nullable=True)
+    experience_min           : Mapped[int | None]   = mapped_column(nullable=True)
+    experience_max           : Mapped[int | None]   = mapped_column(nullable=True)
 
-    created_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at         : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
-                                                                        onupdate=lambda: datetime.now(timezone.utc))
+    education_level          : Mapped[str | None]   = mapped_column(String(100), nullable=True)
+
+    skills                   : Mapped[list[str]]    = mapped_column(JSON, default=list, nullable=False)
+    technologies             : Mapped[list[str]]    = mapped_column(JSON, default=list, nullable=False)
+
+    required_skills          : Mapped[list[str]]    = mapped_column(JSON, default=list, nullable=False)
+    missing_skills           : Mapped[list[str]]    = mapped_column(JSON, default=list, nullable=False)
+
+    matched_resume           : Mapped[bool]         = mapped_column(default=False)
+    matched_percentage       : Mapped[float]        = mapped_column(FLOAT, default=0.0)
+
+    flexibility_score        : Mapped[float | None] = mapped_column(FLOAT, nullable=True)
+    compensation_value_score : Mapped[float | None] = mapped_column(FLOAT, nullable=True)
+    prestige_score           : Mapped[float | None] = mapped_column(FLOAT, nullable=True)
+    growth_score             : Mapped[float | None] = mapped_column(FLOAT, nullable=True)
+
+    apply_url                : Mapped[str | None]   = mapped_column(String(600), nullable=True)
+
+    posted_at                : Mapped[date | None]  = mapped_column(Date, nullable=True)
+
+    status                   : Mapped[JobStatus]    = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
+    status_date              : Mapped[date]         = mapped_column(Date, default=lambda: datetime.now(timezone.utc).date())
 
 
 

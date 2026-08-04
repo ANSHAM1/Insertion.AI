@@ -4,10 +4,10 @@ from langchain_core.prompt_values import PromptValue
 
 from src.config.state_manager import StateManager
 
-from src.fetcher.job.models import JobClass
+from src.fetcher.hirebase.model import JobModel
 from src.database.repository import JobRepository
 
-from src.validators.job_output import JobOutput
+from src.validators.Hirebase_output import JobModelOutput
 
 
 
@@ -19,10 +19,10 @@ class JobState(TypedDict):
 
     app_state        : StateManager
 
-    jobs             : list[JobClass] 
-    output           : JobOutput
+    jobs             : list[JobModel] 
+    output           : JobModelOutput
 
     job_repo         : JobRepository
 
     prompt           : PromptValue
-    llm_failed       : bool
+    terminate        : bool

@@ -1,9 +1,7 @@
 from langgraph.graph import StateGraph, START, END # type: ignore
 
 from src.agents.job_agent.state import JobState
-from src.agents.job_agent.nodes import (search_jobs_node, build_prompt_node, llm_inference_node, save_node, llm_status_router, valid_jobs_router)
-
-
+from src.agents.job_agent.nodes import (search_jobs_node, build_prompt_node, llm_inference_node, save_node, terminate_router, )
 
 
 
@@ -24,10 +22,10 @@ workflow.add_edge(START, "search_jobs")
 
 workflow.add_conditional_edges(
     "search_jobs",
-    valid_jobs_router,
+    terminate_router,
     {
-        "build_prompt": "build_prompt",
-        "end": END,
+        "false": "build_prompt",
+        "true": END,
     },
 )
 
@@ -35,10 +33,10 @@ workflow.add_edge("build_prompt", "llm_inference")
 
 workflow.add_conditional_edges(
     "llm_inference",
-    llm_status_router,
+    terminate_router,
     {
-        "save": "save",
-        "end": END,
+        "false": "save",
+        "true": END,
     },
 )
 

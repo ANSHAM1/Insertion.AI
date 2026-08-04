@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     ADZUNA_APP_ID        : str = ""
     ADZUNA_APP_KEY       : str = ""
 
+    HIREBASE_API_KEY_1   : str = ""
+    HIREBASE_API_KEY_2   : str = ""
+    HIREBASE_API_KEY_3   : str = ""
+
     GMAIL_SECRETS_DIR    : Path
 
     SYNC_DATA_PATH       : Path
