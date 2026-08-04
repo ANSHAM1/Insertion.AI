@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export async function refreshJobsData() {
+export async function fetchJobs() {
   const result = await invoke("run_python", {
     command: "job",
   });
@@ -8,7 +8,7 @@ export async function refreshJobsData() {
   return result.items ?? [];
 }
 
-export async function extractJobs() {
+export async function generateNewJobs() {
   const result = await invoke("run_python", {
     command: "new_jobs",
   });
@@ -16,7 +16,7 @@ export async function extractJobs() {
   return result.items ?? [];
 }
 
-export async function updateJobStatus(id, status) {
+export async function updateJobStatusApi(id, status) {
   await invoke("run_python", {
     command: "job_status",
     payload: {

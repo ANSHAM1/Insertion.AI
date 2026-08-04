@@ -8,12 +8,12 @@ import { generatePlanner, completeTask, saveReflection } from "../apis/planner";
 //   updateCollegeDriveStatus,
 // } from "../apis/college";
 
-// import {
-//   extractJobs,
-//   refreshJobsData,
-//   updateJobStatus as updateJobStatusApi,
-//   removeJob,
-// } from "../apis/job";
+import {
+  fetchJobs,
+  generateNewJobs,
+  updateJobStatusApi,
+  removeJob,
+} from "../apis/job";
 
 // import { extractDashboard } from "../apis/dashboard";
 
@@ -27,13 +27,13 @@ export function AppProvider({ children }) {
   const [lastSync, setLastSync] = useState(new Date());
   const [syncing, setSyncing] = useState(false);
 
+  // ---------------------------------------------------------------------
+
   const [planner, setPlanner] = useState([]);
   const [loadingPlanner, setLoadingPlanner] = useState(false);
   const [reflection, setReflection] = useState(false);
 
   const refreshPlanner = async () => {
-    if (syncing) return;
-
     try {
       const data = await generatePlanner();
 
@@ -44,7 +44,6 @@ export function AppProvider({ children }) {
   };
 
   const toggleTask = async (id, completed) => {
-    // optimistic update first, so the UI responds instantly
     setPlanner((prev) =>
       prev.map((day) => ({
         ...day,
@@ -59,7 +58,6 @@ export function AppProvider({ children }) {
     } catch (err) {
       console.error(err);
 
-      // rollback on failure
       setPlanner((prev) =>
         prev.map((day) => ({
           ...day,
@@ -82,6 +80,74 @@ export function AppProvider({ children }) {
       console.error(err);
     }
   };
+
+  // ---------------------------------------------------------------------
+
+  const [jobs, setJobs] = useState([]);
+  const [jobLoading, setJobLoading] = useState(false);
+
+  async function refreshJobs() {
+    setJobLoading(true);
+
+    try {
+      const jobs = await fetchJobs();
+
+      setJobs(jobs);
+    } finally {
+      setJobLoading(false);
+    }
+  }
+
+  async function updateJobStatus(jobId, status) {
+    const previous = [...jobs];
+
+    setJobs((prev) =>
+      prev.map((job) =>
+        job.id === jobId
+          ? {
+              ...job,
+              status,
+            }
+          : job,
+      ),
+    );
+
+    try {
+      await updateJobStatusApi(jobId, status);
+    } catch (err) {
+      setJobs(previous);
+      throw err;
+    }
+  }
+
+  async function deleteJob(jobId) {
+    const previous = [...jobs];
+
+    setJobs((prev) => prev.filter((j) => String(j.id) !== String(jobId)));
+
+    try {
+      await removeJob(jobId);
+    } catch (err) {
+      setJobs(previous);
+      throw err;
+    }
+  }
+
+  async function generateJobs() {
+    if (syncing) return;
+
+    setJobLoading(true);
+
+    try {
+      const jobs = await generateNewJobs();
+
+      setJobs(jobs);
+    } finally {
+      setJobLoading(false);
+    }
+  }
+
+  // ---------------------------------------------------------------------
 
   // // ---------------- Article ----------------
 
@@ -261,67 +327,6 @@ export function AppProvider({ children }) {
   // // Jobs
   // // ===========================================================
 
-  // async function refreshJobs() {
-  //   setJobLoading(true);
-
-  //   try {
-  //     const jobs = await refreshJobsData();
-
-  //     setJobs(jobs);
-  //     setJobLoaded(true);
-  //   } finally {
-  //     setJobLoading(false);
-  //   }
-  // }
-
-  // async function updateJobStatus(jobId, status) {
-  //   const previous = [...jobs];
-
-  //   setJobs((prev) =>
-  //     prev.map((job) =>
-  //       job.id === jobId
-  //         ? {
-  //             ...job,
-  //             status,
-  //           }
-  //         : job,
-  //     ),
-  //   );
-
-  //   try {
-  //     await updateJobStatusApi(jobId, status);
-  //   } catch (err) {
-  //     setJobs(previous);
-  //     throw err;
-  //   }
-  // }
-
-  // async function deleteJob(jobId) {
-  //   const previous = [...jobs];
-
-  //   setJobs((prev) => prev.filter((job) => job.id !== jobId));
-
-  //   try {
-  //     await removeJob(jobId);
-  //   } catch (err) {
-  //     setJobs(previous);
-  //     throw err;
-  //   }
-  // }
-
-  // async function loadJobs() {
-  //   setJobLoading(true);
-
-  //   try {
-  //     const jobs = await extractJobs();
-
-  //     setJobs(jobs);
-  //     setJobLoaded(true);
-  //   } finally {
-  //     setJobLoading(false);
-  //   }
-  // }
-
   // // ===========================================================
   // // Dashboard
   // // ===========================================================
@@ -394,8 +399,8 @@ export function AppProvider({ children }) {
 
     await Promise.all([
       refreshPlanner(),
+      refreshJobs(),
       // refreshCollege(),
-      // refreshJobs(),
       // refreshDashboard(),
       // refreshArticles(),
       // refreshCodingQuestions()
@@ -413,8 +418,8 @@ export function AppProvider({ children }) {
     <AppContext.Provider
       value={{
         lastSync,
-        refreshAll,
         syncing,
+        refreshAll,
 
         planner,
         reflection,
@@ -422,14 +427,11 @@ export function AppProvider({ children }) {
         updateReflection,
         setReflection,
 
-        // // Planner
-        // plannerTasks,
-        // plannerLoading,
-        // plannerLoaded,
-
-        // refreshPlanner,
-        // updatePlannerTask,
-        // savePlannerReflection,
+        jobs,
+        jobLoading,
+        updateJobStatus,
+        deleteJob,
+        generateJobs,
 
         // // Article
         // article,
