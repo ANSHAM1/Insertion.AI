@@ -7,7 +7,6 @@ import Coding from "./pages/Coding";
 import CodeEditor from "./pages/CodeEditor";
 import Planner from "./pages/Planner";
 import Jobs from "./pages/Jobs";
-import CollegeDrives from "./pages/CollegeDrives";
 
 import { AppProvider } from "./context/AppContext";
 
@@ -23,7 +22,6 @@ export default function App() {
             <Route path="/coding" element={<Coding />} />
             <Route path="/planner" element={<Planner />} />
             <Route path="/jobs" element={<Jobs />} />
-            <Route path="/college-drives" element={<CollegeDrives />} />
           </Route>
         </Routes>
       </AppProvider>

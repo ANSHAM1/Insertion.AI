@@ -11,20 +11,7 @@ class JobStatus(str, Enum):
     REJECTED   = "REJECTED"
     ACCEPTED   = "ACCEPTED"
     WITHDRAWN  = "WITHDRAWN"
-
-
-class EmploymentType(str, Enum):
-    INTERNSHIP = "INTERNSHIP"
-    FULL_TIME  = "FULL_TIME"
-    PART_TIME  = "PART_TIME"
-    CONTRACT   = "CONTRACT"
-
-
-
-class RecruitmentType(str, Enum):
-    ONCAMPUS  = "ONCAMPUS"
-    OFFCAMPUS = "OFFCAMPUS"
-
+    
 
 
 class CodingStatus(Enum):

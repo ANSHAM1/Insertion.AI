@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone, time
 
-from src.database.enums import (EmploymentType, JobStatus, RecruitmentType, CodingStatus, CodingDifficulty)
+from src.database.enums import (JobStatus, CodingStatus, CodingDifficulty)
 
 
 
@@ -61,36 +61,6 @@ class JobLookup(Base):
 
     id         : Mapped[str]      = mapped_column(String(200), primary_key=True)
     created_at : Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-
-
-
-class CollegeDrive(Base):
-    __tablename__ = "college_drives"
-
-    drive_ref_id     : Mapped[str]                    = mapped_column(String(128), primary_key=True)
-
-    company          : Mapped[str]                    = mapped_column(String(200), index=True)
-    role             : Mapped[str]                    = mapped_column(String(200))
-    description      : Mapped[str | None]             = mapped_column(Text)
-    employment_type  : Mapped[EmploymentType | None]  = mapped_column(SqlEnum(EmploymentType), nullable=True)
-    recruitment_type : Mapped[RecruitmentType | None] = mapped_column(SqlEnum(RecruitmentType), nullable=True)
-    
-    location         : Mapped[str | None]             = mapped_column(String(150), nullable=True)
-    salary           : Mapped[str | None]             = mapped_column(String(100), nullable=True)
-    bond             : Mapped[int | None]             = mapped_column(nullable=True)
-    apply_url        : Mapped[str | None]             = mapped_column(String(600), nullable=True)
-
-    status           : Mapped[JobStatus]              = mapped_column(SqlEnum(JobStatus), default=JobStatus.FOUND, index=True)
-
-    drive_date       : Mapped[date | None]            = mapped_column(Date, nullable=True)
-    report_time      : Mapped[time | None]            = mapped_column(Time, nullable=True)
-    venue            : Mapped[str | None]             = mapped_column(String(100), nullable=True)
-
-    skills           : Mapped[list[str]]              = mapped_column(JSON, default=list, nullable=False)
-
-    created_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at       : Mapped[datetime]               = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), 
-                                                                        onupdate=lambda: datetime.now(timezone.utc))
 
 
 

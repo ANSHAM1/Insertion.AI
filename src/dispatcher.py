@@ -9,14 +9,13 @@ from src.config.state_manager import StateManager
 from src.database.connection import SessionLocal
 from src.database.enums import JobStatus
 
-from src.database.repository import (DailyScheduleRepository, RssRepository, CollegeDriveRepository, JobRepository, CodingRepository)
-from src.database.models import (DailySchedule, CollegeDrive, Job, ReadingArticle)
+from src.database.repository import (DailyScheduleRepository, RssRepository, JobRepository, CodingRepository)
+from src.database.models import (DailySchedule, Job, ReadingArticle)
 
 from src.fetcher.github.models import Question, FrontendMetadata, Metadata
 from src.fetcher.github.repository import GithubRepository
 
 from src.agents.planner_agent.workflow import planner_graph
-from src.agents.college_agent.workflow import college_graph
 from src.agents.job_agent.workflow import job_graph
 from src.agents.code_agent.evaluator.workflow import evaluator_graph
 from src.agents.code_agent.generator.workflow import generator_graph
@@ -166,81 +165,6 @@ class PlannerDispatch(InsertionAIDispatch):
             raise ValueError("Schedule not found.")
 
         schedule_repo.update_user_reflection(schedule, reflection)
-
-
-
-class CollegeDispatch(InsertionAIDispatch):
-
-    def _helper(self, drives: list[CollegeDrive]) -> dict[str, Any]:
-
-        if not drives:
-            return {"items": []}
-
-        return {
-            "items": [
-                {
-                    "id"               : drive.drive_ref_id,
-                    "company"          : drive.company,
-                    "role"             : drive.role,
-                    "description"      : drive.description,
-                    "employment_type"  : (drive.employment_type.value if drive.employment_type else None),
-                    "recruitment_type" : (drive.recruitment_type.value if drive.recruitment_type else None),
-                    "location"         : drive.location,
-                    "salary"           : drive.salary,
-                    "bond"             : drive.bond,
-                    "apply_url"        : drive.apply_url,
-                    "status"           : drive.status.value,
-                    "drive_date"       : (drive.drive_date.isoformat() if drive.drive_date else None),
-                    "report_time"      : (drive.report_time.strftime("%H:%M") if drive.report_time else None),
-                    "venue"            : drive.venue,
-                    "skills"           : drive.skills
-                }
-                for drive in sorted(drives, key=lambda x: (x.drive_date or date.max, x.company.lower()))
-            ]
-        } # type: ignore
-
-    def invoke(self):
-
-        repo = CollegeDriveRepository(self.db)
-
-        latest_hist_id = self.app_state.GMAIL_STATE("college")
-    
-
-        state: dict[str, Any] = {
-            "curr_date"      : date.today(),
-            "app_state"      : self.app_state,
-            "latest_hist_id" : latest_hist_id,
-            "emails"         : [],
-            "output"         : None,
-            "prompt"         : "",
-            "llm_failed"     : False,
-        }
-
-        college_graph.invoke(state)# type: ignore
-        return self._helper(repo.get_all())
-
-    def update_status(self, drive_ref_id: str, status: str) -> None:
-
-        repo = CollegeDriveRepository(self.db)
-
-        drive = repo.get(drive_ref_id)
-
-        if drive is None:
-            raise ValueError(f"Drive '{drive_ref_id}' not found.")
-
-        drive.status = JobStatus(status)
-        repo.commit()
-
-    def remove_drive(self, drive_ref_id: str) -> None:
-        repo = CollegeDriveRepository(self.db)
-
-        drive = repo.get(drive_ref_id)
-
-        if drive is None:
-            raise ValueError(f"Drive '{drive_ref_id}' not found.")
-
-        repo.delete(drive)
-        repo.commit()
 
 
 
@@ -486,31 +410,6 @@ def article(command: str, payload: dict[Any, Any]):
         app.close()
 
 
-def college(command: str, payload: dict[Any, Any]):
-    app = CollegeDispatch()
-
-    try:
-        if command == "college":
-            return app.invoke()
-
-        elif command == "college_status":
-            app.update_status(
-                payload["drive_ref_id"],
-                payload["status"],
-            )
-            return None
-
-        elif command == "college_remove":
-            app.remove_drive(
-                payload["drive_ref_id"],
-            )
-            return None
-
-        raise ValueError(f"Unknown college command: {command}")
-
-    finally:
-        app.close()
-
 
 def job(command: str, payload: dict[Any, Any]):
     app = JobDispatch()
@@ -570,59 +469,3 @@ def evaluator(command: str, payload: dict[Any, Any]):
 
     finally:
         app.close()
-
-
-
-
-
-
-
-
-
-
-
-
-# from datetime import date, datetime
-# import json
-
-# from src.agents.job_agent.workflow import job_graph
-
-# from src.config.settings import get_settings
-# from src.config.state_manager import StateManager
-
-# from src.database.connection import SessionLocal
-# from src.database.repository import JobRepository
-
-
-# db = SessionLocal()
-# settings = get_settings()
-
-# app_state = StateManager()
-
-
-
-# latest_hist_id = app_state.GMAIL_STATE("college")
-
-# with open(settings.RESUME_PATH, "r", encoding="utf-8") as resume_file:
-#     resume_data = json.load(resume_file)
-
-# state : object = {
-#     "curr_date"       : date.today(),
-#     "timestamp"       : datetime.now(),
-
-#     "resume"          : resume_data,
-#     "app_state"       : app_state,
-
-#     "jobs"            : [],
-#     "output"          : None,
-
-#     "job_repo"        : JobRepository(db),
-
-#     "prompt"          : "",
-#     "llm_failed"      : False
-# }
-
-
-# for step in job_graph.stream(state):  # type: ignore
-#     print("=" * 60)
-#     print(step)

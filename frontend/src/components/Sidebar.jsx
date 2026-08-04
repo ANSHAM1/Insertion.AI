@@ -17,8 +17,7 @@ const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/coding", label: "Coding", icon: Code2 },
   { to: "/planner", label: "Planner", icon: CalendarDays },
-  { to: "/jobs", label: "Jobs", icon: Briefcase },
-  { to: "/college-drives", label: "College Drives", icon: Building2 },
+  { to: "/jobs", label: "Jobs", icon: Briefcase }
 ];
 
 export default function Sidebar() {

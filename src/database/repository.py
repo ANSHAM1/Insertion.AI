@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, time
 from typing import Any
 from collections.abc import Iterable
 
-from src.database.models import Job, JobLookup, ReadingArticle, DailySchedule, ScheduleItem, CollegeDrive, CodeSolution
+from src.database.models import Job, JobLookup, ReadingArticle, DailySchedule, ScheduleItem, CodeSolution
 
 
 class Repository:
@@ -84,27 +84,6 @@ class JobRepository(Repository):
 
         self.commit()
         self.refresh(job)
-
-
-
-class CollegeDriveRepository(Repository):
-
-    def find_duplicate(self, drive_id : str) -> CollegeDrive | None:
-        return self.db.scalar(
-            select(CollegeDrive).where(CollegeDrive.drive_ref_id == drive_id))
-
-    def get(self, drive_id: str) -> CollegeDrive | None:
-        return self.db.get(CollegeDrive, drive_id)
-
-    def get_all(self) -> list[CollegeDrive]:
-        return list(self.db.scalars(select(CollegeDrive)).all())
-
-    def add_if_not_exists(self, drive: CollegeDrive) -> bool:
-        if self.find_duplicate(drive.drive_ref_id):
-            return False
-
-        self.add(drive)
-        return True
 
 
 

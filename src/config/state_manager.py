@@ -84,14 +84,3 @@ class StateManager:
 
     def CODE_SYNC(self, now: datetime) -> None:
         self._set_datetime(now, "code", "last_sync")
-
-
-
-    def GMAIL_STATE(self, account: str) -> str:
-        file : Any = self._load_state()
-        return file["gmail"][account]["last_sync"]
-
-    def GMAIL_SYNC(self, account: str, latest_hist_id: str) -> None:
-        state = self._load_state()
-        state["gmail"][account]["last_sync"] = latest_hist_id
-        self._save_state(state)

@@ -29,6 +29,8 @@ import {
 
 import { SectionCard } from "../components/UI";
 
+import { useApp } from "../context/AppContext";
+
 const iconMap = { ClipboardList, Code2, Briefcase, Building2, Clock };
 
 function StatCard({ label, value, unit, sub, icon, ring }) {
@@ -83,6 +85,15 @@ function StatCard({ label, value, unit, sub, icon, ring }) {
 }
 
 export default function Dashboard() {
+  const {
+    article,
+    articleLoading,
+    updateArticleStatus,
+
+    dashboardData,
+    dashboardLoading,
+  } = useApp();
+  
   const [tasks, setTasks] = useState(todaysTasks);
   const [datetime, setDateTime] = useState(new Date());
 

@@ -2,12 +2,6 @@ import { createContext, useContext, useState, useEffect } from "react";
 
 import { generatePlanner, completeTask, saveReflection } from "../apis/planner";
 
-// import {
-//   extractCollegeDrives,
-//   removeCollegeDrive,
-//   updateCollegeDriveStatus,
-// } from "../apis/college";
-
 import {
   fetchJobs,
   generateNewJobs,
@@ -15,9 +9,9 @@ import {
   removeJob,
 } from "../apis/job";
 
-// import { extractDashboard } from "../apis/dashboard";
+import { extractDashboard } from "../apis/dashboard";
 
-// import { extractArticle, updateArticleReadStatus } from "../apis/article";
+import { extractArticle, updateArticleReadStatus } from "../apis/article";
 
 // import { extractCodingQuestions, saveCodingSolution } from "../apis/code";
 
@@ -149,200 +143,60 @@ export function AppProvider({ children }) {
 
   // ---------------------------------------------------------------------
 
-  // // ---------------- Article ----------------
+  const [article, setArticle] = useState(null);
+  const [articleLoading, setArticleLoading] = useState(false);
 
-  // const [article, setArticle] = useState(null);
-  // const [articleLoading, setArticleLoading] = useState(false);
-  // const [articleLoaded, setArticleLoaded] = useState(false);
+  async function refreshArticles() {
+    setArticleLoading(true);
 
-  // // ---------------- College ----------------
+    try {
+      const article = await extractArticle();
 
-  // const [collegeDrives, setCollegeDrives] = useState([]);
-  // const [collegeLoading, setCollegeLoading] = useState(false);
-  // const [collegeLoaded, setCollegeLoaded] = useState(false);
+      setArticle(article);
+    } finally {
+      setArticleLoading(false);
+    }
+  }
 
-  // // ----------------- Jobs -----------------
+  async function updateArticleStatus(status) {
+    const previous = article;
 
-  // const [jobs, setJobs] = useState([]);
-  // const [jobLoading, setJobLoading] = useState(false);
-  // const [jobLoaded, setJobLoaded] = useState(false);
+    setArticle((prev) =>
+      prev
+        ? {
+            ...prev,
+            status,
+          }
+        : prev,
+    );
 
-  // // ---------------- Dashboard -------------
+    try {
+      await updateArticleStatusApi(status);
+    } catch (err) {
+      setArticle(previous);
+      throw err;
+    }
+  }
 
-  // const [dashboardData, setDashboardData] = useState(null);
-  // const [dashboardLoading, setDashboardLoading] = useState(false);
-  // const [dashboardLoaded, setDashboardLoaded] = useState(false);
+  // ---------------------------------------------------------------------
 
-  // // ------------ Code-generator -------------
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
 
-  // const [codingQuestions, setCodingQuestions] = useState([]);
-  // const [codingLoading, setCodingLoading] = useState(false);
-  // const [codingLoaded, setCodingLoaded] = useState(false);
+  async function refreshDashboard() {
+    setDashboardLoading(true);
 
-  // // ------------ Code-evaluator -------------
+    try {
+      const dashboard = await extractDashboard();
 
-  // const [metadata, setMetadata] = useState(null);
-  // const [metadataLoading, setMetadataLoading] = useState(false);
-  // const [metadataLoaded, setMetadataLoaded] = useState(false);
+      setDashboardData(dashboard);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }
 
-  // async function refreshPlanner() {
-  //   setPlannerLoading(true);
+  // ---------------------------------------------------------------------
 
-  //   try {
-  //     const planner = await generatePlanner();
-
-  //     setPlannerTasks(planner);
-  //     setPlannerLoaded(true);
-  //   } finally {
-  //     setPlannerLoading(false);
-  //   }
-  // }
-
-  // async function updatePlannerTask(taskId, completed) {
-  //   // optimistic update
-  //   setPlannerTasks((prev) =>
-  //     prev.map((task) =>
-  //       task.id === taskId
-  //         ? {
-  //             ...task,
-  //             completed,
-  //           }
-  //         : task,
-  //     ),
-  //   );
-
-  //   try {
-  //     await completeTask(taskId, completed);
-  //   } catch (err) {
-  //     // rollback
-  //     setPlannerTasks((prev) =>
-  //       prev.map((task) =>
-  //         task.id === taskId
-  //           ? {
-  //               ...task,
-  //               completed: !completed,
-  //             }
-  //           : task,
-  //       ),
-  //     );
-
-  //     throw err;
-  //   }
-  // }
-
-  // async function savePlannerReflection(reflection) {
-  //   await saveReflection(reflection);
-  // }
-
-  // // ===========================================================
-  // // Article
-  // // ===========================================================
-
-  // async function refreshArticles() {
-  //   setArticleLoading(true);
-
-  //   try {
-  //     const article = await extractArticle();
-
-  //     setArticle(article);
-  //     setArticleLoaded(true);
-  //   } finally {
-  //     setArticleLoading(false);
-  //   }
-  // }
-
-  // async function updateArticleStatus(status) {
-  //   const previous = article;
-
-  //   setArticle((prev) =>
-  //     prev
-  //       ? {
-  //           ...prev,
-  //           status,
-  //         }
-  //       : prev,
-  //   );
-
-  //   try {
-  //     await updateArticleStatusApi(status);
-  //   } catch (err) {
-  //     setArticle(previous);
-  //     throw err;
-  //   }
-  // }
-
-  // // ===========================================================
-  // // College
-  // // ===========================================================
-
-  // async function refreshCollege() {
-  //   setCollegeLoading(true);
-
-  //   try {
-  //     const drives = await extractCollegeDrives();
-
-  //     setCollegeDrives(drives);
-  //     setCollegeLoaded(true);
-  //   } finally {
-  //     setCollegeLoading(false);
-  //   }
-  // }
-
-  // async function updateDriveStatus(driveId, status) {
-  //   const previous = [...collegeDrives];
-
-  //   setCollegeDrives((prev) =>
-  //     prev.map((drive) =>
-  //       drive.id === driveId
-  //         ? {
-  //             ...drive,
-  //             status,
-  //           }
-  //         : drive,
-  //     ),
-  //   );
-
-  //   try {
-  //     await updateCollegeDriveStatus(driveId, status);
-  //   } catch (err) {
-  //     setCollegeDrives(previous);
-  //     throw err;
-  //   }
-  // }
-
-  // async function deleteDrive(driveId) {
-  //   const previous = [...collegeDrives];
-
-  //   setCollegeDrives((prev) => prev.filter((drive) => drive.id !== driveId));
-
-  //   try {
-  //     await removeCollegeDrive(driveId);
-  //   } catch (err) {
-  //     setCollegeDrives(previous);
-  //     throw err;
-  //   }
-  // }
-
-  // // ===========================================================
-  // // Jobs
-  // // ===========================================================
-
-  // // ===========================================================
-  // // Dashboard
-  // // ===========================================================
-
-  // async function refreshDashboard() {
-  //   setDashboardLoading(true);
-
-  //   try {
-  //     const dashboard = await extractDashboard();
-
-  //     setDashboardData(dashboard);
-  //     setDashboardLoaded(true);
-  //   } finally {
-  //     setDashboardLoading(false);
-  //   }
-  // }
 
   // // ===========================================================
   // // Coding
@@ -388,9 +242,7 @@ export function AppProvider({ children }) {
   //   }
   // }
 
-  // ===========================================================
-  // Global
-  // ===========================================================
+
 
   async function refreshAll() {
     if (syncing) return;
@@ -400,9 +252,8 @@ export function AppProvider({ children }) {
     await Promise.all([
       refreshPlanner(),
       refreshJobs(),
-      // refreshCollege(),
-      // refreshDashboard(),
-      // refreshArticles(),
+      refreshDashboard(),
+      refreshArticles(),
       // refreshCodingQuestions()
     ]);
 
@@ -433,37 +284,12 @@ export function AppProvider({ children }) {
         deleteJob,
         generateJobs,
 
-        // // Article
-        // article,
-        // articleLoading,
-        // articleLoaded,
+        article,
+        articleLoading,
+        updateArticleStatus,
 
-        // refreshArticles,
-        // updateArticleStatus,
-
-        // // College
-        // collegeDrives,
-        // collegeLoading,
-        // collegeLoaded,
-
-        // refreshCollege,
-        // updateDriveStatus,
-        // deleteDrive,
-
-        // // Jobs
-        // jobs,
-        // jobLoading,
-        // jobLoaded,
-
-        // refreshJobs,
-        // updateJobStatus,
-        // deleteJob,
-        // loadJobs,
-
-        // // Dashboard
-        // dashboardData,
-        // dashboardLoading,
-        // dashboardLoaded,
+        dashboardData,
+        dashboardLoading,
 
         // refreshDashboard,
 
