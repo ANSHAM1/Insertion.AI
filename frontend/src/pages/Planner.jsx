@@ -1,65 +1,103 @@
 import React, { useState } from "react";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, Check } from "lucide-react";
 
 import { SectionCard } from "../components/UI";
 
 import { useApp } from "../context/AppContext";
 
-const colorMap = {
-  orange: "bg-orange-600/20 border-orange-600/40 text-orange-400",
-  blue: "bg-blue-600/20 border-blue-600/40 text-blue-400",
-  green: "bg-emerald-600/20 border-emerald-600/40 text-emerald-400",
-  purple: "bg-purple-600/20 border-purple-600/40 text-purple-400",
-  red: "bg-red-600/20 border-red-600/40 text-red-400",
-  yellow: "bg-yellow-600/20 border-yellow-600/40 text-yellow-400",
-  pink: "bg-pink-600/20 border-pink-600/40 text-pink-400",
-  teal: "bg-teal-600/20 border-teal-600/40 text-teal-400",
-  indigo: "bg-indigo-600/20 border-indigo-600/40 text-indigo-400",
-  cyan: "bg-cyan-600/20 border-cyan-600/40 text-cyan-400",
-  amber: "bg-amber-600/20 border-amber-600/40 text-amber-400",
-};
+const START_HOUR = 12;
+const HOUR_COUNT = 12;
 
-const COLOR_KEYS = Object.keys(colorMap).filter((k) => k !== "green");
-
-function getTaskColorClass(task) {
-  if (task.completed) return colorMap.green;
-  if (task.color && colorMap[task.color]) return colorMap[task.color];
-
-  const key = String(task.id ?? task.title ?? "");
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  }
-  return colorMap[COLOR_KEYS[hash % COLOR_KEYS.length]];
-}
-
-const START_HOUR = 0;
-const HOURS = Array.from({ length: 24 }, (_, i) => {
-  return new Date(2000, 0, 1, i).toLocaleTimeString("en-IN", {
+const HOURS = Array.from({ length: HOUR_COUNT }, (_, i) => {
+  const hour = START_HOUR + i;
+  return new Date(2000, 0, 1, hour % 24).toLocaleTimeString("en-IN", {
     hour: "numeric",
     hour12: true,
   });
 });
 
 const ROW_HEIGHT = 64; // h-16 = 64px
+const WINDOW_START = START_HOUR * 60;
+const WINDOW_END = (START_HOUR + HOUR_COUNT) * 60;
 
 function parseTime(time) {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 }
 
-function getEventStyle(startTime, endTime) {
-  const start = Math.max(parseTime(startTime), START_HOUR * 60);
-  const end = Math.min(parseTime(endTime), (START_HOUR + HOURS.length) * 60);
-  const startOffset = start - START_HOUR * 60;
+function getTimeStyle(task) {
+  const start = Math.max(parseTime(task.start_time), WINDOW_START);
+  const end = Math.min(parseTime(task.end_time), WINDOW_END);
+  const startOffset = start - WINDOW_START;
 
   return {
-    top: `${(startOffset / 60) * ROW_HEIGHT}px`,
-    height: `${Math.max(((end - start) / 60) * ROW_HEIGHT, 24)}px`,
+    top: (startOffset / 60) * ROW_HEIGHT,
+    height: Math.max(((end - start) / 60) * ROW_HEIGHT, 22),
   };
 }
 
-// Local (not UTC) date string, so it matches the backend's date keying
+function layoutDayTasks(items) {
+  const withRange = items
+    .map((task) => {
+      const start = Math.max(parseTime(task.start_time), WINDOW_START);
+      const end = Math.max(
+        Math.min(parseTime(task.end_time), WINDOW_END),
+        start + 1,
+      );
+      return { task, start, end };
+    })
+    .sort((a, b) => a.start - b.start);
+
+  const positioned = [];
+  let cluster = [];
+  let clusterEnd = -Infinity;
+
+  const flushCluster = () => {
+    if (cluster.length === 0) return;
+
+    const columns = []; // columns[i] = end time of last item placed in that column
+    const colIndexOf = [];
+
+    cluster.forEach((ev) => {
+      let placedCol = -1;
+      for (let c = 0; c < columns.length; c++) {
+        if (ev.start >= columns[c]) {
+          placedCol = c;
+          break;
+        }
+      }
+      if (placedCol === -1) {
+        placedCol = columns.length;
+        columns.push(ev.end);
+      } else {
+        columns[placedCol] = ev.end;
+      }
+      colIndexOf.push(placedCol);
+    });
+
+    const numCols = columns.length;
+
+    cluster.forEach((ev, i) => {
+      positioned.push({ ...ev, col: colIndexOf[i], numCols });
+    });
+
+    cluster = [];
+  };
+
+  withRange.forEach((ev) => {
+    if (ev.start >= clusterEnd) {
+      flushCluster();
+      clusterEnd = ev.end;
+    } else {
+      clusterEnd = Math.max(clusterEnd, ev.end);
+    }
+    cluster.push(ev);
+  });
+  flushCluster();
+
+  return positioned;
+}
+
 function toLocalDateString(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -83,14 +121,12 @@ function getCurrentWeekDates() {
 }
 
 export default function Planner() {
-  const [saved, setSaved] = useState(true);
+  const [saveState, setSaveState] = useState("idle");
   const { planner, reflection, toggleTask, updateReflection, setReflection } =
     useApp();
 
   const todayString = toLocalDateString(new Date());
 
-  // Always render the full current week, even if the API only returned
-  // days that have tasks
   const weekDays = getCurrentWeekDates().map((date) => {
     const dateString = toLocalDateString(date);
     const existing = planner?.find((d) => d.date === dateString);
@@ -107,6 +143,17 @@ export default function Planner() {
     month: "short",
     year: "numeric",
   })}`;
+
+  const handleSaveReflection = async () => {
+    setSaveState("saving");
+    try {
+      await updateReflection(reflection);
+      setSaveState("saved");
+      setTimeout(() => setSaveState("idle"), 2500);
+    } catch {
+      setSaveState("error");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -175,40 +222,91 @@ export default function Planner() {
                 ))}
               </div>
 
-              {weekDays.map((day) => (
-                <div
-                  key={day.date}
-                  className="relative border-l border-[#1c1c1f]"
-                  style={{
-                    height: ROW_HEIGHT * HOURS.length,
-                  }}
-                >
-                  {HOURS.map((_, i) => (
-                    <div key={i} className="h-16 border-t border-[#1c1c1f]" />
-                  ))}
+              {weekDays.map((day) => {
+                const positionedTasks = layoutDayTasks(day.items);
 
-                  {day.items.map((task) => (
-                    <div
-                      key={task.id}
-                      className={`absolute left-1 right-1 rounded-lg border px-2 py-1 overflow-hidden ${getTaskColorClass(
-                        task,
-                      )}`}
-                      style={{
-                        ...getEventStyle(task.start_time, task.end_time),
-                        minHeight: 24,
-                      }}
-                    >
-                      <p className="font-medium text-[11px] leading-tight line-clamp-2">
-                        {task.title}
-                      </p>
+                return (
+                  <div
+                    key={day.date}
+                    className="relative border-l border-[#1c1c1f]"
+                    style={{
+                      height: ROW_HEIGHT * HOUR_COUNT,
+                    }}
+                  >
+                    {HOURS.map((_, i) => (
+                      <div key={i} className="h-16 border-t border-[#1c1c1f]" />
+                    ))}
 
-                      <p className="text-[10px] opacity-70 mt-1">
-                        {task.start_time} - {task.end_time}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ))}
+                    {positionedTasks.map(({ task, col, numCols }) => {
+                      const { top, height } = getTimeStyle(task);
+                      const gap = 4; // px gap between side-by-side columns
+                      const colWidthPct = 100 / numCols;
+                      const tooltipBelow = top < 50; // not enough room above near the top row
+
+                      return (
+                        <div
+                          key={task.id}
+                          className={`group absolute rounded-lg border px-2 py-1 cursor-default transition-colors ${
+                            task.completed
+                              ? "bg-white/5 border-white/10 text-gray-500"
+                              : "bg-orange-600/15 border-orange-600/40 text-orange-300 hover:bg-orange-600/25"
+                          }`}
+                          style={{
+                            top: `${top + 3}px`,
+                            height: `${height - 6}px`,
+                            left: `calc(${col * colWidthPct}% + ${
+                              col === 0 ? 6 : gap / 2
+                            }px)`,
+                            width: `calc(${colWidthPct}% - ${
+                              numCols === 1
+                                ? 12
+                                : col === 0 || col === numCols - 1
+                                  ? 6 + gap / 2
+                                  : gap
+                            }px)`,
+                          }}
+                        >
+                          <p className="font-medium text-[11px] leading-tight overflow-hidden text-ellipsis whitespace-nowrap">
+                            {task.title}
+                          </p>
+
+                          {task.note && (
+                            <div
+                              className={`pointer-events-none absolute z-20 hidden group-hover:block left-1/2 -translate-x-1/2 w-max max-w-[220px] ${
+                                tooltipBelow
+                                  ? "top-full translate-y-1"
+                                  : "-top-1 -translate-y-full"
+                              }`}
+                            >
+                              {tooltipBelow ? (
+                                <>
+                                  <div className="w-2 h-2 bg-[#141416] border-l border-t border-[#232326] rotate-45 mx-auto -mb-1" />
+                                  <div className="bg-[#141416] border border-[#232326] text-gray-200 text-[11px] leading-snug rounded-lg px-2.5 py-1.5 shadow-xl">
+                                    <span className="block font-medium text-orange-400 mb-0.5">
+                                      {task.title}
+                                    </span>
+                                    {task.note}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="bg-[#141416] border border-[#232326] text-gray-200 text-[11px] leading-snug rounded-lg px-2.5 py-1.5 shadow-xl">
+                                    <span className="block font-medium text-orange-400 mb-0.5">
+                                      {task.title}
+                                    </span>
+                                    {task.note}
+                                  </div>
+                                  <div className="w-2 h-2 bg-[#141416] border-r border-b border-[#232326] rotate-45 mx-auto -mt-1" />
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </SectionCard>
@@ -225,19 +323,22 @@ export default function Planner() {
                   <button
                     key={t.id}
                     onClick={() => toggleTask(t.id, !t.completed)}
-                    className="w-full flex items-center gap-3 text-left"
+                    className="w-full flex items-start gap-3 text-left"
                   >
                     {t.completed ? (
                       <CheckCircle2
                         size={17}
-                        className="text-orange-500 shrink-0"
+                        className="text-orange-500 shrink-0 mt-0.5"
                       />
                     ) : (
-                      <Circle size={17} className="text-gray-600 shrink-0" />
+                      <Circle
+                        size={17}
+                        className="text-gray-600 shrink-0 mt-0.5"
+                      />
                     )}
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-sm truncate ${
+                        className={`text-sm ${
                           t.completed
                             ? "text-gray-500 line-through"
                             : "text-gray-200"
@@ -261,25 +362,29 @@ export default function Planner() {
               value={reflection ?? ""}
               onChange={(e) => {
                 setReflection(e.target.value);
-                setSaved(false);
+                setSaveState("idle");
               }}
             />
-            <div className="flex justify-end mt-3">
+            <div className="flex items-center justify-end gap-3 mt-3">
+              {saveState === "saved" && (
+                <span className="flex items-center gap-1 text-xs text-emerald-500">
+                  <Check size={13} /> Saved
+                </span>
+              )}
+              {saveState === "error" && (
+                <span className="text-xs text-red-500">Failed to save</span>
+              )}
               <button
-                onClick={async () => {
-                  try {
-                    await updateReflection(reflection);
-                    setSaved(true);
-                  } catch {
-                    setSaved(false);
-                  }
-                }}
-                className="bg-orange-600 hover:bg-orange-500 text-white text-sm px-4 py-2 rounded-xl"
+                onClick={handleSaveReflection}
+                disabled={saveState === "saving"}
+                className="flex items-center gap-2 bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-xl shadow-[0_1px_0_0_rgba(255,255,255,0.15)_inset,0_4px_10px_-2px_rgba(234,88,12,0.5)] transition-all active:scale-[0.97]"
               >
-                Save
+                {saveState === "saving" && (
+                  <Loader2 size={14} className="animate-spin" />
+                )}
+                {saveState === "saving" ? "Saving..." : "Save"}
               </button>
             </div>
-            {saved && <p className="text-xs text-emerald-500 mt-2">Saved</p>}
           </SectionCard>
         </div>
       </div>
