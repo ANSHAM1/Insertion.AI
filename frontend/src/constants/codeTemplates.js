@@ -23,26 +23,65 @@ export const LANGUAGE_MAP = {
   rust: "RUST",
   ruby: "RUBY",
 };
-
 const TEMPLATES = {
   cpp: `#include <bits/stdc++.h>
 using namespace std;
 
+/*
+ * Approach:
+ * Time Complexity:  O(?)
+ * Space Complexity: O(?)
+ */
+class Solution {
+public:
+    void solve() {
+        // Write your solution here
+
+    }
+};
+
 int main() {
-    // Write your solution here
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    Solution sol;
+    sol.solve();
 
     return 0;
 }
 `,
   java: `import java.util.*;
+import java.io.*;
 
 public class Main {
-    public static void main(String[] args) {
+    /*
+     * Approach:
+     * Time Complexity:  O(?)
+     * Space Complexity: O(?)
+     */
+    static void solve() throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
         // Write your solution here
+
+    }
+
+    public static void main(String[] args) throws IOException {
+        solve();
     }
 }
 `,
-  python: `def solve():
+  python: `import sys
+
+
+def solve():
+    """
+    Approach:
+    Time Complexity:  O(?)
+    Space Complexity: O(?)
+    """
+    data = sys.stdin.read().split()
+
     # Write your solution here
     pass
 
@@ -50,48 +89,111 @@ public class Main {
 if __name__ == "__main__":
     solve()
 `,
-  javascript: `function solve() {
+  javascript: `'use strict';
+
+/**
+ * Approach:
+ * Time Complexity:  O(?)
+ * Space Complexity: O(?)
+ */
+function solve(input) {
   // Write your solution here
 }
 
-solve();
+const data = require('fs').readFileSync('/dev/stdin', 'utf8').trim();
+solve(data);
 `,
-  typescript: `function solve(): void {
+  typescript: `/**
+ * Approach:
+ * Time Complexity:  O(?)
+ * Space Complexity: O(?)
+ */
+function solve(input: string): void {
   // Write your solution here
 }
 
-solve();
+const data: string = require('fs').readFileSync('/dev/stdin', 'utf8').trim();
+solve(data);
 `,
   c: `#include <stdio.h>
+#include <stdlib.h>
 
-int main(void) {
+/*
+ * Approach:
+ * Time Complexity:  O(?)
+ * Space Complexity: O(?)
+ */
+void solve(void) {
     // Write your solution here
 
+}
+
+int main(void) {
+    solve();
     return 0;
 }
 `,
   csharp: `using System;
+using System.IO;
 
 class Program {
-    static void Main() {
+    /*
+     * Approach:
+     * Time Complexity:  O(?)
+     * Space Complexity: O(?)
+     */
+    static void Solve() {
         // Write your solution here
+
+    }
+
+    static void Main() {
+        Solve();
     }
 }
 `,
   go: `package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+// Approach:
+// Time Complexity:  O(?)
+// Space Complexity: O(?)
+func solve(reader *bufio.Reader) {
+	// Write your solution here
+	_ = fmt.Sprint
+}
 
 func main() {
-    // Write your solution here
-    _ = fmt.Sprint
+	reader := bufio.NewReader(os.Stdin)
+	solve(reader)
 }
 `,
-  rust: `fn main() {
+  rust: `use std::io::{self, Read};
+
+/// Approach:
+/// Time Complexity:  O(?)
+/// Space Complexity: O(?)
+fn solve(input: &str) {
     // Write your solution here
 }
+
+fn main() {
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    solve(&input);
+}
 `,
-  ruby: `def solve
+  ruby: `# Approach:
+# Time Complexity:  O(?)
+# Space Complexity: O(?)
+def solve
+  input = STDIN.read
+
   # Write your solution here
 end
 

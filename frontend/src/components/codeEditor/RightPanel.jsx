@@ -7,7 +7,7 @@ import LanguageDropdown from "./LanguageDropdown";
 import CodeEditorPanel from "./CodeEditorPanel";
 import TestcasePanel from "./TestcasePanel";
 
-export default function CodePanel({
+export default function RightPanel({
   languageId,
   setLanguageId,
   code,
@@ -47,12 +47,14 @@ export default function CodePanel({
       </PanelResizeHandle>
 
       <Panel defaultSize={28} minSize={15} maxSize={60}>
-        <TestcasePanel
-          testcases={testcases}
-          testTab={testTab}
-          setTestTab={setTestTab}
-          testCaseResults={testCaseResults}
-        />
+        <div className="h-full flex flex-col min-h-0">
+          <TestcasePanel
+            testcases={testcases}
+            testTab={testTab}
+            setTestTab={setTestTab}
+            testCaseResults={testCaseResults}
+          />
+        </div>
       </Panel>
     </PanelGroup>
   );

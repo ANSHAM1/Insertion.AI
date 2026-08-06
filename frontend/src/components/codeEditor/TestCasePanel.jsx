@@ -18,7 +18,6 @@ export default function TestcasePanel({
   testcases,
   testTab,
   setTestTab,
-  height,
   testCaseResults,
 }) {
   const compileError = testCaseResults?.compiletime_error;
@@ -29,13 +28,9 @@ export default function TestcasePanel({
   const currentResult = results[testTab];
 
   return (
-    <div
-      style={{ height }}
-      className="border-t border-[#1c1c1f] flex flex-col shrink-0 overflow-hidden"
-    >
-
+    <div className="border-t border-[#1c1c1f] flex flex-col flex-1 min-h-0">
       {compileError ? (
-        <div className="flex-1 overflow-y-auto themed-scrollbar p-5 bg-[#141416]">
+        <div className="flex-1 overflow-y-auto themed-scrollbar p-5 bg-[#141416] min-h-0">
           <div className="flex items-center gap-2 text-red-400 mb-4">
             <AlertTriangle size={17} />
             <span className="font-semibold">Compilation Error</span>
@@ -47,7 +42,6 @@ export default function TestcasePanel({
         </div>
       ) : (
         <>
-
           <div className="border-b border-[#1c1c1f] shrink-0">
             <div className="flex items-center gap-1 px-3 pt-2 overflow-x-auto themed-scrollbar">
               <FlaskConical
@@ -87,7 +81,7 @@ export default function TestcasePanel({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto themed-scrollbar bg-[#141416]">
+          <div className="flex-1 overflow-y-auto themed-scrollbar bg-[#141416] min-h-0">
             {currentCase && (
               <div className="p-5 space-y-5 text-sm">
                 <Section title="Input" value={testCaseInput(currentCase)} />

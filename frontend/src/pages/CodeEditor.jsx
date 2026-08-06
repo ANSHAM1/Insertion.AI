@@ -18,7 +18,7 @@ import TitleBar from "../components/TitleBar";
 
 import EditorTopBar from "../components/codeEditor/EditorTopBar";
 import LeftPanel from "../components/codeEditor/LeftPanel";
-import CodePanel from "../components/codeEditor/RightPanel";
+import RightPanel from "../components/codeEditor/RightPanel";
 import SubmitResultModal from "../components/codeEditor/SubmitResultModal";
 
 import {
@@ -86,26 +86,6 @@ export default function CodeEditor() {
   }, [question?.question_id]);
 
   useEffect(() => {
-    if (showSubmitModal) return;
-
-    const id = setInterval(() => {
-      setElapsedSeconds((prev) => {
-        if (prev >= totalSeconds) {
-          clearInterval(id);
-
-          handleRunAndEvaluate();
-
-          return totalSeconds;
-        }
-
-        return prev + 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [totalSeconds, showSubmitModal]);
-
-  useEffect(() => {
     const appWindow = getCurrentWindow();
 
     let unlistenResize;
@@ -171,25 +151,9 @@ export default function CodeEditor() {
     }
   }, [navigate]);
 
-  if (!question) {
-    return (
-      <div className="fixed inset-0 bg-[#0b0b0d] text-gray-200 flex flex-col items-center justify-center gap-3 z-50">
-        <p className="text-sm text-gray-500">Problem not found.</p>
+  const testcases = question?.testcases ?? [];
 
-        <button
-          onClick={goBack}
-          className="flex items-center gap-1 text-gray-400 hover:text-white text-sm"
-        >
-          <ArrowLeft size={16} />
-          Back to Coding
-        </button>
-      </div>
-    );
-  }
-
-  const testcases = question.testcases ?? [];
-
-  const lastResultIsCurrent = metadata?.question_id === question.question_id;
+  const lastResultIsCurrent = metadata?.question_id === question?.question_id;
 
   const handleRun = async () => {
     await runCode(question.summary, code, testcases);
@@ -201,6 +165,8 @@ export default function CodeEditor() {
     const startedAt = startedAtRef.current;
     const submittedAt = new Date();
 
+    const results = testCaseResults?.results ?? []; // <-- this line must be here
+
     const frontendMeta = {
       question_id: question.question_id,
       language: LANGUAGE_MAP[languageId],
@@ -210,9 +176,9 @@ export default function CodeEditor() {
 
       time_taken: Math.max(0, Math.round((submittedAt - startedAt) / 1000)),
 
-      passed_public_tests: testcases.map((tc) => ({
+      passed_public_tests: testcases.map((tc, index) => ({
         testcase: tc,
-        passed: false,
+        passed: results[index]?.passed ?? false,
       })),
     };
 
@@ -229,6 +195,47 @@ export default function CodeEditor() {
 
     await handleSubmit();
   };
+
+  const handleRunAndEvaluateRef = useRef(handleRunAndEvaluate);
+  useEffect(() => {
+    handleRunAndEvaluateRef.current = handleRunAndEvaluate;
+  });
+
+  useEffect(() => {
+    if (showSubmitModal) return;
+
+    const id = setInterval(() => {
+      setElapsedSeconds((prev) => {
+        if (prev >= totalSeconds) {
+          clearInterval(id);
+
+          handleRunAndEvaluateRef.current();
+
+          return totalSeconds;
+        }
+
+        return prev + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [totalSeconds, showSubmitModal]);
+
+  if (!question) {
+    return (
+      <div className="fixed inset-0 bg-[#0b0b0d] text-gray-200 flex flex-col items-center justify-center gap-3 z-50">
+        <p className="text-sm text-gray-500">Problem not found.</p>
+
+        <button
+          onClick={goBack}
+          className="flex items-center gap-1 text-gray-400 hover:text-white text-sm"
+        >
+          <ArrowLeft size={16} />
+          Back to Coding
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-[#0b0b0d] text-gray-200 flex flex-col z-50">
@@ -272,7 +279,7 @@ export default function CodeEditor() {
         </PanelResizeHandle>
 
         <Panel minSize={35} className="min-h-0">
-          <CodePanel
+          <RightPanel
             languageId={languageId}
             setLanguageId={setLanguageId}
             code={code}

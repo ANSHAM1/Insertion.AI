@@ -1,9 +1,7 @@
 from typing import Any
 
-from src.dispatcher import planner, job, article, evaluator, generator
-from src.dashboard import dashboard
+from src.dispatchers import job, planner, article, evaluator, generator, code_runner, dashboard
 
-from src.dispatchers.run_code_dispatch import code_runner
 
 import sys, json
 

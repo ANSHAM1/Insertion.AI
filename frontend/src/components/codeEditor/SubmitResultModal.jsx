@@ -134,18 +134,6 @@ export default function SubmitResultModal({ loading, metadata, onClose }) {
                       title="Space Complexity"
                       value={metadata.space_complexity}
                     />
-
-                    <InfoCard
-                      icon={<Clock size={14} />}
-                      title="Runtime"
-                      value={`${metadata.time_taken}s`}
-                    />
-
-                    <InfoCard
-                      icon={<CheckCircle2 size={14} />}
-                      title="Public Tests"
-                      value={`${passedCount}/${passedTests.length}`}
-                    />
                   </div>
                 </div>
 
