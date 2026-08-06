@@ -179,6 +179,18 @@ class DailyScheduleRepository(Repository):
         self.commit()
         self.refresh(schedule_item)
 
+    def delete_schedule(self, schedule_date: date) -> bool:
+        schedule = (
+            self.db.query(DailySchedule)
+            .filter(DailySchedule.schedule_date == schedule_date)
+            .first()
+        )
+
+        if schedule is None:
+            return False
+
+        self.db.delete(schedule)
+        return True
 
 
 class CodingRepository(Repository):

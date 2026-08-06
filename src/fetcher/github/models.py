@@ -21,6 +21,13 @@ class TestCase(BaseModel):
     output : str
 
 
+class PublicTestResult(BaseModel):
+
+    testcase : TestCase
+
+    passed   : bool
+
+
 
 class Question(BaseModel):
 
@@ -59,7 +66,7 @@ class FrontendMetadata(BaseModel):
 
     time_taken          : int = Field(ge=0)
 
-    passed_public_tests : dict[TestCase, bool]
+    passed_public_tests : list[PublicTestResult]
 
 
 
@@ -83,7 +90,7 @@ class Metadata(BaseModel):
 
     space_complexity    : str
 
-    passed_public_tests : dict[TestCase, bool]
+    passed_public_tests : list[PublicTestResult]
 
     feedback            : str
 

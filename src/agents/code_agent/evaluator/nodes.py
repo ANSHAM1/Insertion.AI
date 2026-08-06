@@ -106,10 +106,6 @@ def upload_node(state: EvaluatorState) -> dict[str, Any]:
             state["frontend_meta"].started_at,
         )
 
-        gitrepo.upload_solution(github_path, state["frontend_meta"].language.value.lower(), state["solution"])
-
-        gitrepo.upload_metadata(github_path, metadata)
-
         dbrepo.add(
             CodeSolution(
                     generated_date = state["generated_date"],
@@ -123,27 +119,19 @@ def upload_node(state: EvaluatorState) -> dict[str, Any]:
                     time_taken     = metadata.time_taken,
                     time_limit     = state["question"].time_limit,
                     started_at     = metadata.started_at,
-                    completed_at   = metadata.started_at + timedelta(minutes=metadata.time_taken),
+                    completed_at   = metadata.started_at + timedelta(seconds=metadata.time_taken),
                     github_path    = github_path
             )
         )
 
+        gitrepo.upload_solution(github_path, state["frontend_meta"].language.value.lower(), state["solution"])
+
+        gitrepo.upload_metadata(github_path, metadata)
+
         dbrepo.commit()
 
-    except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-
+    except Exception:
         dbrepo.rollback()
+        raise
 
-        raise e
-
-        # dbrepo.rollback()
-        # return {
-        #     "uploaded" : False
-        # }
-
-    return {
-        "uploaded": True,
-    }
+    return {}

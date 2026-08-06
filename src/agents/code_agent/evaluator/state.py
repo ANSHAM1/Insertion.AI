@@ -28,5 +28,3 @@ class EvaluatorState(TypedDict):
 
     prompt         : PromptValue
     terminate      : bool
-
-    uploaded       : bool

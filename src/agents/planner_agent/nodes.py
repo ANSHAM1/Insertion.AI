@@ -27,6 +27,9 @@ def load_context_node(state : PlannerState) -> dict[str, Any]:
 
     schedule_repo = state["schedule_repo"]
 
+    if schedule_repo.delete_schedule(state["curr_date"]):
+        schedule_repo.commit()
+
     prev_day_date = state["curr_date"] - timedelta(days=1)
 
     return {

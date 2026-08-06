@@ -16,20 +16,22 @@ if __name__ == "__main__":
     )
 
     commands : dict[str, Any] = {
-        "planner": planner,
-        "planner_complete": planner,
-        "planner_reflection": planner,
+        "planner"            : planner,
+        "planner_complete"   : planner,
+        "planner_reflection" : planner,
 
-        "article": article,
-        "planner_read_status": article,
+        "article"             : article,
+        "planner_read_status" : article,
 
-        "job" : job,
+        "job"        : job,
         "job_status" : job,
         "job_remove" : job,
-        "new_jobs" : job,
+        "new_jobs"   : job,
+
+        "refresh_questions" : generator,
+        "generator"         : generator,
 
         "evaluator" : evaluator,
-        "generator" : generator,
 
         "dashboard" : dashboard
     }

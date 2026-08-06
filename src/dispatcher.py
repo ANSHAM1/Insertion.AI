@@ -273,7 +273,7 @@ class JobDispatch(InsertionAIDispatch):
 
 class CodingGeneratorDispatch(InsertionAIDispatch):
 
-    def __init__(self, user_prompt: str = ""):
+    def __init__(self, user_prompt: str):
         super().__init__()
         self.user_prompt = user_prompt
         
@@ -309,6 +309,12 @@ class CodingGeneratorDispatch(InsertionAIDispatch):
         }
 
         generator_graph.invoke(state)  # type: ignore
+
+        git_repo = GithubRepository()
+
+        return self._helper(git_repo.fetch_all_questions())
+
+    def refresh_questions(self):
 
         git_repo = GithubRepository()
 
@@ -441,11 +447,14 @@ def job(command: str, payload: dict[Any, Any]):
 
 
 def generator(command: str, payload: dict[Any, Any]):
-    app = CodingGeneratorDispatch()
+    app = CodingGeneratorDispatch(payload["user_prompt"])
 
     try:
         if command == "generator":
             return app.invoke()
+
+        elif command == "refresh_questions":
+            return app.refresh_questions()
 
         raise ValueError(f"Unknown generator command: {command}")
 

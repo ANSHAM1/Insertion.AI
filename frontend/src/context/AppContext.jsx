@@ -13,7 +13,7 @@ import { extractDashboard } from "../apis/dashboard";
 
 import { extractArticle, updateArticleReadStatus } from "../apis/article";
 
-// import { extractCodingQuestions, saveCodingSolution } from "../apis/code";
+import { fetchCodingQuestions, extractCodingQuestions, saveCodingSolution } from "../apis/code";
 
 const AppContext = createContext(null);
 
@@ -25,7 +25,7 @@ export function AppProvider({ children }) {
 
   const [planner, setPlanner] = useState([]);
   const [loadingPlanner, setLoadingPlanner] = useState(false);
-  const [reflection, setReflection] = useState(false);
+  const [reflection, setReflection] = useState("");
 
   const refreshPlanner = async () => {
     try {
@@ -69,7 +69,7 @@ export function AppProvider({ children }) {
     try {
       await saveReflection(reflection);
 
-      setReflection(true);
+      setReflection("");
     } catch (err) {
       console.error(err);
     }
@@ -197,52 +197,62 @@ export function AppProvider({ children }) {
 
   // ---------------------------------------------------------------------
 
+  const [codingQuestions, setCodingQuestions] = useState([]);
+  const [codingLoading, setCodingLoading] = useState(false);
 
-  // // ===========================================================
-  // // Coding
-  // // ===========================================================
+  const [metadata, setMetadata] = useState(null);
+  const [metadataLoading, setMetadataLoading] = useState(false);
 
-  // async function refreshCodingQuestions() {
-  //   setCodingLoading(true);
+  async function refreshCodingQuestions() {
+    setCodingLoading(true);
 
-  //   try {
-  //     const data = await extractCodingQuestions();
+    try {
+      const data = await fetchCodingQuestions();
 
-  //     setCodingQuestions(data);
-  //     setCodingLoaded(true);
-  //   } finally {
-  //     setCodingLoading(false);
-  //   }
-  // }
+      setCodingQuestions(data);
+    } finally {
+      setCodingLoading(false);
+    }
+  }
 
-  // async function refreshCodingMetadata(
-  //   question,
-  //   generated_date,
-  //   solution,
-  //   frontend_meta,
-  // ) {
-  //   setMetadata(null);
-  //   setMetadataLoaded(false);
-  //   setMetadataLoading(true);
+  async function generateCodingQuestions(user_prompt) {
+    setCodingLoading(true);
 
-  //   try {
-  //     const data = await saveCodingSolution(
-  //       question,
-  //       generated_date,
-  //       solution,
-  //       frontend_meta,
-  //     );
+    try {
+      const data = await extractCodingQuestions(user_prompt);
 
-  //     setMetadata(data);
-  //     setMetadataLoaded(true);
+      setCodingQuestions(data);
+    } finally {
+      setCodingLoading(false);
+    }
+  }
 
-  //     return data;
-  //   } finally {
-  //     setMetadataLoading(false);
-  //   }
-  // }
+  async function getCodingMetadata(
+    question,
+    generated_date,
+    solution,
+    frontend_meta,
+  ) {
+    setMetadata(null);
+    setMetadataLoading(true);
 
+    console.log(frontend_meta)
 
+    try {
+      const data = await saveCodingSolution(
+        question,
+        generated_date,
+        solution,
+        frontend_meta,
+      );
+
+      setMetadata(data);
+    } finally {
+      setMetadataLoading(false);
+    }
+  }
+
+  // ---------------------------------------------------------------------
 
   async function refreshAll() {
     if (syncing) return;
@@ -254,7 +264,7 @@ export function AppProvider({ children }) {
       refreshJobs(),
       refreshDashboard(),
       refreshArticles(),
-      // refreshCodingQuestions()
+      refreshCodingQuestions()
     ]);
 
     setLastSync(new Date());
@@ -291,21 +301,13 @@ export function AppProvider({ children }) {
         dashboardData,
         dashboardLoading,
 
-        // refreshDashboard,
+        codingQuestions,
+        codingLoading,
+        generateCodingQuestions,
 
-        // // Code Generator
-        // codingQuestions,
-        // setCodingQuestions,
-        // codingLoading,
-        // codingLoaded,
-        // refreshCodingQuestions,
-
-        // // Code Evaluator
-        // metadata,
-        // setMetadata,
-        // metadataLoading,
-        // metadataLoaded,
-        // refreshCodingMetadata,
+        metadata,
+        metadataLoading,
+        getCodingMetadata,
       }}
     >
       {children}

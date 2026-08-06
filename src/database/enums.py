@@ -29,6 +29,13 @@ class CodingDifficulty(Enum):
 
 
 class ProgrammingLanguage(Enum):
-    CPP    = "CPP"
-    JAVA   = "JAVA"
-    PYTHON = "PYTHON"
+    CPP        = "CPP"
+    C          = "C"
+    JAVA       = "JAVA"
+    PYTHON     = "PYTHON"
+    JAVASCRIPT = "JAVASCRIPT"
+    TYPESCRIPT = "TYPESCRIPT"
+    CSHARP     = "CSHARP"
+    GO         = "GO"
+    RUST       = "RUST"
+    RUBY       = "RUBY"

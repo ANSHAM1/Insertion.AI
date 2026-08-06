@@ -3,7 +3,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from datetime import date, datetime, timezone, time
 
-from src.database.enums import (JobStatus, CodingStatus, CodingDifficulty)
+from src.database.enums import (JobStatus, CodingStatus, CodingDifficulty, ProgrammingLanguage)
 
 
 
@@ -126,7 +126,7 @@ class CodeSolution(Base):
 
     difficulty     : Mapped[CodingDifficulty]    = mapped_column(SqlEnum(CodingDifficulty), nullable=False)
     status         : Mapped[CodingStatus | None] = mapped_column(SqlEnum(CodingStatus), index=True)
-    language       : Mapped[str | None]          = mapped_column(String(20), nullable=True)
+    language       : Mapped[str | None]          = mapped_column(SqlEnum(ProgrammingLanguage), nullable=True)
     score          : Mapped[int | None]          = mapped_column(Integer, nullable=True)
 
     time_limit     : Mapped[int]                 = mapped_column(Integer, nullable=False)   # minutes

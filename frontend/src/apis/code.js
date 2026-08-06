@@ -1,19 +1,33 @@
 import { invoke } from "@tauri-apps/api/core";
 
-
-export async function extractCodingQuestions(user_prompt) {
+export async function fetchCodingQuestions() {
   const result = await invoke("run_python", {
-    command: "generator",
+    command: "refresh_questions",
     payload: {
-      user_prompt
-    }
+      user_prompt: "",
+    },
   });
 
   return result.items;
 }
 
+export async function extractCodingQuestions(user_prompt) {
+  const result = await invoke("run_python", {
+    command: "generator",
+    payload: {
+      user_prompt,
+    },
+  });
 
-export async function saveCodingSolution(question, generated_date, solution, frontend_meta) {
+  return result.items;
+}
+
+export async function saveCodingSolution(
+  question,
+  generated_date,
+  solution,
+  frontend_meta,
+) {
   const result = await invoke("run_python", {
     command: "evaluator",
     payload: {

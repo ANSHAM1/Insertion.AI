@@ -377,7 +377,7 @@ export default function Planner() {
               <button
                 onClick={handleSaveReflection}
                 disabled={saveState === "saving"}
-                className="flex items-center gap-2 bg-gradient-to-b from-orange-500 to-orange-600 hover:from-orange-400 hover:to-orange-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium px-4 py-2 rounded-xl shadow-[0_1px_0_0_rgba(255,255,255,0.15)_inset,0_4px_10px_-2px_rgba(234,88,12,0.5)] transition-all active:scale-[0.97]"
+                className="flex items-center gap-1.5 bg-[#1a1a1c] hover:bg-[#212124] border border-[#232326] text-gray-200 text-sm px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saveState === "saving" && (
                   <Loader2 size={14} className="animate-spin" />
