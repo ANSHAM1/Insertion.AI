@@ -13,7 +13,12 @@ import { extractDashboard } from "../apis/dashboard";
 
 import { extractArticle, updateArticleReadStatus } from "../apis/article";
 
-import { fetchCodingQuestions, extractCodingQuestions, saveCodingSolution } from "../apis/code";
+import {
+  fetchCodingQuestions,
+  extractCodingQuestions,
+  saveCodingSolution,
+  testCaseResultCodeRun,
+} from "../apis/code";
 
 const AppContext = createContext(null);
 
@@ -203,6 +208,9 @@ export function AppProvider({ children }) {
   const [metadata, setMetadata] = useState(null);
   const [metadataLoading, setMetadataLoading] = useState(false);
 
+  const [testCaseResults, setTestCaseResults] = useState(null);
+  const [runningCode, setRunningCode] = useState(false);
+
   async function refreshCodingQuestions() {
     setCodingLoading(true);
 
@@ -236,8 +244,6 @@ export function AppProvider({ children }) {
     setMetadata(null);
     setMetadataLoading(true);
 
-    console.log(frontend_meta)
-
     try {
       const data = await saveCodingSolution(
         question,
@@ -249,6 +255,30 @@ export function AppProvider({ children }) {
       setMetadata(data);
     } finally {
       setMetadataLoading(false);
+    }
+  }
+
+  async function runCode(questionSummary, solution, testcases) {
+    setRunningCode(true);
+    setTestCaseResults(null);
+
+    try {
+      const data = await testCaseResultCodeRun(
+        questionSummary,
+        solution,
+        testcases,
+      );
+
+      setTestCaseResults(data);
+    } catch (err) {
+      console.error(err);
+
+      setTestCaseResults({
+        compiletime_error: "Failed to execute code.",
+        results: [],
+      });
+    } finally {
+      setRunningCode(false);
     }
   }
 
@@ -264,7 +294,7 @@ export function AppProvider({ children }) {
       refreshJobs(),
       refreshDashboard(),
       refreshArticles(),
-      refreshCodingQuestions()
+      refreshCodingQuestions(),
     ]);
 
     setLastSync(new Date());
@@ -304,6 +334,10 @@ export function AppProvider({ children }) {
         codingQuestions,
         codingLoading,
         generateCodingQuestions,
+
+        testCaseResults,
+        runningCode,
+        runCode,
 
         metadata,
         metadataLoading,

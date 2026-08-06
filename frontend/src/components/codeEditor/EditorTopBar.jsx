@@ -6,6 +6,7 @@ import {
   Play,
   Sparkles,
   Timer,
+  Loader2,
 } from "lucide-react";
 
 const difficultyColor = {
@@ -34,6 +35,7 @@ export default function EditorTopBar({
   focusMode,
   toggleFullscreen,
   setFocusMode,
+  codeIsRunning,
 }) {
   return (
     <div
@@ -82,10 +84,20 @@ export default function EditorTopBar({
 
         <button
           onClick={onRun}
-          className="flex items-center gap-2 px-3 py-2 rounded-md bg-[#141416] hover:bg-[#1c1c1f] border border-[#232326] transition-colors text-gray-200 text-sm"
+          disabled={codeIsRunning}
+          className={`flex items-center gap-2 px-3 py-2 rounded-md border border-[#232326] text-sm transition-all ${
+            codeIsRunning
+              ? "bg-[#1c1c1f] text-gray-400 cursor-not-allowed"
+              : "bg-[#141416] hover:bg-[#1c1c1f] text-gray-200"
+          }`}
         >
-          <Play size={14} className="text-emerald-400 fill-emerald-400" />
-          Run
+          {codeIsRunning ? (
+            <Loader2 size={14} className="animate-spin text-orange-500" />
+          ) : (
+            <Play size={14} className="text-emerald-400 fill-emerald-400" />
+          )}
+
+          {codeIsRunning ? "Running..." : "Run"}
         </button>
 
         {/* Evaluate */}

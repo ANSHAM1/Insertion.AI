@@ -33,8 +33,15 @@ export default function CodeEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const { codingQuestions, metadata, metadataLoading, getCodingMetadata } =
-    useApp();
+  const {
+    codingQuestions,
+    metadata,
+    metadataLoading,
+    getCodingMetadata,
+    testCaseResults,
+    runningCode,
+    runCode,
+  } = useApp();
 
   const [languageId, setLanguageId] = useState(LANGUAGES[0].id);
   const [code, setCode] = useState("");
@@ -185,7 +192,7 @@ export default function CodeEditor() {
   const lastResultIsCurrent = metadata?.question_id === question.question_id;
 
   const handleRun = async () => {
-    // TODO: run public test cases
+    await runCode(question.summary, code, testcases);
   };
 
   const handleSubmit = async () => {
@@ -237,6 +244,7 @@ export default function CodeEditor() {
         focusMode={focusMode}
         toggleFullscreen={toggleFullscreen}
         setFocusMode={setFocusMode}
+        codeIsRunning={runningCode}
       />
 
       <PanelGroup
@@ -272,6 +280,7 @@ export default function CodeEditor() {
             testcases={testcases}
             testTab={testTab}
             setTestTab={setTestTab}
+            testCaseResults={testCaseResults}
           />
         </Panel>
       </PanelGroup>

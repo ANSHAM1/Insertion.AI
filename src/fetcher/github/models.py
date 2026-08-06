@@ -21,12 +21,11 @@ class TestCase(BaseModel):
     output : str
 
 
-class PublicTestResult(BaseModel):
+class TestCaseResult(BaseModel):
 
     testcase : TestCase
 
     passed   : bool
-
 
 
 class Question(BaseModel):
@@ -66,7 +65,7 @@ class FrontendMetadata(BaseModel):
 
     time_taken          : int = Field(ge=0)
 
-    passed_public_tests : list[PublicTestResult]
+    passed_public_tests : list[TestCaseResult]
 
 
 
@@ -90,7 +89,7 @@ class Metadata(BaseModel):
 
     space_complexity    : str
 
-    passed_public_tests : list[PublicTestResult]
+    passed_public_tests : list[TestCaseResult]
 
     feedback            : str
 

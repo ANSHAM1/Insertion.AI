@@ -3,6 +3,8 @@ from typing import Any
 from src.dispatcher import planner, job, article, evaluator, generator
 from src.dashboard import dashboard
 
+from src.dispatchers.run_code_dispatch import code_runner
+
 import sys, json
 
 if __name__ == "__main__":
@@ -31,7 +33,8 @@ if __name__ == "__main__":
         "refresh_questions" : generator,
         "generator"         : generator,
 
-        "evaluator" : evaluator,
+        "code_runner" : code_runner,
+        "evaluator"   : evaluator,
 
         "dashboard" : dashboard
     }

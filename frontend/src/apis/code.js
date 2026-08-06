@@ -40,3 +40,20 @@ export async function saveCodingSolution(
 
   return result;
 }
+
+export async function testCaseResultCodeRun(
+  question_summary,
+  solution,
+  testcases,
+) {
+  const result = await invoke("run_python", {
+    command: "code_runner",
+    payload: {
+      question_summary,
+      solution,
+      testcases
+    },
+  });
+
+  return result;
+}

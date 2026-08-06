@@ -15,6 +15,7 @@ export default function CodePanel({
   testcases,
   testTab,
   setTestTab,
+  testCaseResults,
 }) {
   return (
     <PanelGroup
@@ -50,6 +51,7 @@ export default function CodePanel({
           testcases={testcases}
           testTab={testTab}
           setTestTab={setTestTab}
+          testCaseResults={testCaseResults}
         />
       </Panel>
     </PanelGroup>
