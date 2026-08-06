@@ -8,7 +8,6 @@ import {
   Play,
   Sparkles,
   Loader2,
-  TrendingUp,
   BarChart3,
   Code2,
   CalendarDays,
@@ -19,13 +18,14 @@ import { SectionCard } from "../components/UI";
 
 import { useApp } from "../context/AppContext";
 
-const MOCK_STREAK = { current: 6, highest: 14 };
-
+// TODO: replace with real solved/total data source later
 const MOCK_DIFFICULTY_STATS = {
   Easy: { solved: 18, total: 25 },
   Medium: { solved: 11, total: 30 },
   Hard: { solved: 3, total: 15 },
 };
+
+const DIFFICULTY_ORDER = ["Easy", "Medium", "Hard"];
 
 const DIFFICULTY_COLOR = {
   Easy: "bg-emerald-500",
@@ -64,56 +64,84 @@ function difficultyStyle(level) {
   );
 }
 
-const MOCK_LANGUAGE_STATS = [
-  { language: "Python", solved: 14, total: 20 },
-  { language: "C++", solved: 9, total: 18 },
-  { language: "JavaScript", solved: 6, total: 12 },
-  { language: "Java", solved: 0, total: 8 },
-  { language: "Go", solved: 0, total: 5 },
-];
+function buildMonthWeeks(dailyData) {
+  const lookup = new Map((dailyData ?? []).map((d) => [d.date, d.attempts]));
 
-function seededDayCount(dateStr) {
-  let h = 0;
-  for (let i = 0; i < dateStr.length; i++)
-    h = (h * 31 + dateStr.charCodeAt(i)) | 0;
-  return Math.abs(h) % 5; // 0-4
-}
-
-function buildHeatmapWeeks(weeks = 26) {
   const today = new Date();
-  const end = new Date(today);
-  const start = new Date(today);
 
-  start.setDate(today.getDate() - weeks * 7);
-  start.setDate(start.getDate() - start.getDay());
+  const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
 
-  const columns = [];
-  const cursor = new Date(start);
+  const end = new Date(today.getFullYear(), today.getMonth() + 2, 0);
 
-  while (cursor <= end) {
+  const firstSunday = new Date(start);
+  firstSunday.setDate(start.getDate() - start.getDay());
+
+  const weeks = [];
+  const monthLabels = [];
+
+  let current = new Date(firstSunday);
+
+  while (current <= end) {
     const week = [];
 
     for (let i = 0; i < 7; i++) {
-      if (cursor <= end) {
-        const dateStr = cursor.toISOString().slice(0, 10);
-        week.push({
-          date: dateStr,
-          count: seededDayCount(dateStr),
-          month: cursor.toLocaleString("en-IN", {
+      const d = new Date(current);
+
+      const key = d.toISOString().slice(0, 10);
+
+      if (d.getMonth() === start.getMonth() && d.getDate() === 1) {
+        monthLabels.push({
+          label: d.toLocaleString("default", {
             month: "short",
           }),
-          day: cursor.getDay(),
+          week: weeks.length,
         });
       }
-      cursor.setDate(cursor.getDate() + 1);
+
+      if (d.getMonth() === today.getMonth() && d.getDate() === 1) {
+        monthLabels.push({
+          label: d.toLocaleString("default", {
+            month: "short",
+          }),
+          week: weeks.length,
+        });
+      }
+
+      if (d.getMonth() === end.getMonth() && d.getDate() === 1) {
+        monthLabels.push({
+          label: d.toLocaleString("default", {
+            month: "short",
+          }),
+          week: weeks.length,
+        });
+      }
+
+      week.push({
+        date: key,
+        count: lookup.get(key) ?? 0,
+        inRange: d >= start && d <= end,
+      });
+
+      current.setDate(current.getDate() + 1);
     }
-    columns.push(week);
+
+    weeks.push(week);
   }
-  return columns;
+
+  return {
+    weeks,
+    monthLabels,
+    title: `${start.toLocaleString("default", {
+      month: "long",
+    })} – ${end.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    })}`,
+  };
 }
 
 function heatColor(count) {
-  if (count === 0) return "bg-[#1a1a1c]";
+  if (!count) return "bg-[#1a1a1c]";
   if (count === 1) return "bg-orange-900/50";
   if (count === 2) return "bg-orange-700/60";
   if (count === 3) return "bg-orange-600/80";
@@ -138,8 +166,8 @@ function formatTimeLimit(seconds) {
   return mins > 0 ? `${mins} min` : `${seconds}s`;
 }
 
-function ProgressRow({ label, solved, total, colorClass, dotClass }) {
-  const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
+function MetricRow({ label, displayValue, value, max, colorClass, dotClass }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
@@ -147,9 +175,7 @@ function ProgressRow({ label, solved, total, colorClass, dotClass }) {
           {dotClass && <span className={`w-2 h-2 rounded-full ${dotClass}`} />}
           {label}
         </span>
-        <span className="text-xs text-gray-500">
-          {solved}/{total}
-        </span>
+        <span className="text-xs text-gray-500">{displayValue}</span>
       </div>
       <div className="w-full h-1.5 bg-[#232326] rounded-full overflow-hidden">
         <div className={`h-full ${colorClass}`} style={{ width: `${pct}%` }} />
@@ -162,7 +188,12 @@ const MAX_KEYWORDS = 5;
 const PAGE_SIZE = 10;
 
 export default function Coding() {
-  const { codingQuestions, codingLoading, generateCodingQuestions } = useApp();
+  const {
+    codingQuestions,
+    codingLoading,
+    generateCodingQuestions,
+    dashboardData,
+  } = useApp();
   const navigate = useNavigate();
   const [promptInput, setPromptInput] = useState("");
   const [page, setPage] = useState(1);
@@ -176,12 +207,44 @@ export default function Coding() {
     );
   }, [codingQuestions]);
 
-  const languageStats = useMemo(
-    () => MOCK_LANGUAGE_STATS.filter((l) => l.solved > 0),
-    [],
+  // ---- real data ----
+  const codingStreak = dashboardData?.coding_streak || {
+    current_streak: 0,
+    best_streak: 0,
+  };
+
+  const avgFailedAttempts = useMemo(() => {
+    const rows = dashboardData?.average_failed_attempts_by_difficulty || [];
+    return DIFFICULTY_ORDER.map((level) => {
+      const match = rows.find(
+        (d) => String(d.difficulty).toLowerCase() === level.toLowerCase(),
+      );
+      return { label: level, value: match ? match.avg_failing_attempts : 0 };
+    });
+  }, [dashboardData]);
+
+  const maxFailedAttempts = Math.max(
+    1,
+    ...avgFailedAttempts.map((d) => d.value),
   );
 
-  const heatmapWeeks = useMemo(() => buildHeatmapWeeks(14), []);
+  const languageDistribution = (
+    dashboardData?.coding_language_distribution ?? []
+  ).map((l) => ({
+    ...l,
+    language: String(l.language).replace("ProgrammingLanguage.", ""),
+  }));
+  const maxLanguageCount = Math.max(
+    1,
+    ...languageDistribution.map((l) => l.count),
+  );
+
+  const topScoringSolutions = dashboardData?.top_scoring_solutions || [];
+
+  const monthWeeks = useMemo(
+    () => buildMonthWeeks(dashboardData?.coding_daily_attempts_current_month),
+    [dashboardData],
+  );
 
   const totalSolved = Object.values(MOCK_DIFFICULTY_STATS).reduce(
     (a, d) => a + d.solved,
@@ -191,8 +254,6 @@ export default function Coding() {
     (a, d) => a + d.total,
     0,
   );
-  const successRate =
-    totalProblems > 0 ? Math.round((totalSolved / totalProblems) * 100) : 0;
 
   const keywordCount = promptInput
     .split(",")
@@ -270,7 +331,7 @@ export default function Coding() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatBox
           icon={Target}
           value={`${totalSolved}/${totalProblems}`}
@@ -278,18 +339,13 @@ export default function Coding() {
         />
         <StatBox
           icon={Flame}
-          value={`${MOCK_STREAK.current} days`}
+          value={`${codingStreak.current_streak} days`}
           label="Current Streak"
         />
         <StatBox
           icon={Trophy}
-          value={`${MOCK_STREAK.highest} days`}
+          value={`${codingStreak.best_streak} days`}
           label="Highest Streak"
-        />
-        <StatBox
-          icon={TrendingUp}
-          value={`${successRate}%`}
-          label="Success Rate"
         />
       </div>
 
@@ -423,32 +479,114 @@ export default function Coding() {
         </SectionCard>
 
         <div className="space-y-5">
-          <SectionCard title="Difficulty Breakdown" icon={BarChart3}>
+          <SectionCard title="Avg Failed Attempts" icon={BarChart3}>
             <div className="space-y-4">
-              {Object.entries(MOCK_DIFFICULTY_STATS).map(([label, stat]) => (
-                <ProgressRow
-                  key={label}
-                  label={label}
-                  solved={stat.solved}
-                  total={stat.total}
-                  colorClass={DIFFICULTY_COLOR[label]}
-                  dotClass={DIFFICULTY_COLOR[label]}
+              {avgFailedAttempts.map((d) => (
+                <MetricRow
+                  key={d.label}
+                  label={d.label}
+                  displayValue={d.value.toFixed(2)}
+                  value={d.value}
+                  max={maxFailedAttempts}
+                  colorClass={DIFFICULTY_COLOR[d.label]}
+                  dotClass={DIFFICULTY_COLOR[d.label]}
                 />
               ))}
             </div>
           </SectionCard>
 
+          <SectionCard title={monthWeeks.title} icon={CalendarDays}>
+            {monthWeeks.weeks.length === 0 ? (
+              <p className="text-sm text-gray-500 py-2">No activity yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="inline-block">
+                  <div className="flex ml-8 mb-2">
+                    {Array.from({ length: monthWeeks.weeks.length }).map(
+                      (_, weekIndex) => {
+                        const label = monthWeeks.monthLabels.find(
+                          (m) => m.week === weekIndex,
+                        );
+
+                        return (
+                          <div
+                            key={weekIndex}
+                            className="w-4 text-[10px] text-gray-500"
+                          >
+                            {label?.label ?? ""}
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+
+                  <div className="flex mt-5">
+                    {/* Weekday labels */}
+                    <div className="flex flex-col justify-between text-[10px] text-gray-600 mr-2 h-[112px]">
+                      <span>Sun</span>
+                      <span>Tue</span>
+                      <span>Thu</span>
+                      <span>Sat</span>
+                    </div>
+
+                    {/* Continuous weeks */}
+                    <div className="flex gap-1">
+                      {monthWeeks.weeks.map((week, wi) => (
+                        <div key={wi} className="flex flex-col gap-1">
+                          {week.map((day, di) => {
+                            if (!day.inRange) {
+                              return (
+                                <div
+                                  key={`${wi}-${di}`}
+                                  className="w-3 h-3 rounded-sm bg-transparent"
+                                />
+                              );
+                            }
+
+                            return (
+                              <div
+                                key={day.date}
+                                title={`${day.date}\n${day.count} submission${
+                                  day.count === 1 ? "" : "s"
+                                }`}
+                                className={`w-3 h-3 rounded-sm transition-colors ${heatColor(day.count)}`}
+                              />
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5 mt-4 text-[11px] text-gray-500">
+              <span>Less</span>
+
+              {[0, 1, 2, 3, 4].map((c) => (
+                <span
+                  key={c}
+                  className={`w-3 h-3 rounded-sm ${heatColor(c)}`}
+                />
+              ))}
+
+              <span>More</span>
+            </div>
+          </SectionCard>
+
           <SectionCard title="By Language" icon={Code2}>
-            {languageStats.length === 0 ? (
+            {languageDistribution.length === 0 ? (
               <p className="text-sm text-gray-500 py-2">No submissions yet.</p>
             ) : (
               <div className="space-y-4">
-                {languageStats.map((l) => (
-                  <ProgressRow
+                {languageDistribution.map((l) => (
+                  <MetricRow
                     key={l.language}
                     label={l.language}
-                    solved={l.solved}
-                    total={l.total}
+                    displayValue={l.count}
+                    value={l.count}
+                    max={maxLanguageCount}
                     colorClass="accent-gradient"
                   />
                 ))}
@@ -456,51 +594,37 @@ export default function Coding() {
             )}
           </SectionCard>
 
-          <SectionCard
-            title={new Date().toLocaleDateString("en-US", {
-              month: "long",
-              year: "numeric",
-            })}
-            icon={CalendarDays}
-          >
-            <div className="flex items-start gap-3 overflow-x-auto scrollbar-thin pb-1">
-              <div className="flex flex-col text-[10px] text-gray-600 pr-2">
-                <span className="h-4 flex items-center">Sun</span>
-                <span className="h-4" />
-                <span className="h-4 flex items-center">Tue</span>
-                <span className="h-4" />
-                <span className="h-4 flex items-center">Thu</span>
-                <span className="h-4" />
-                <span className="h-4 flex items-center">Sat</span>
+          <SectionCard title="Top Scoring Solutions" icon={Trophy}>
+            {topScoringSolutions.length === 0 ? (
+              <p className="text-sm text-gray-500 py-2">No solutions yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {topScoringSolutions.map((s) => {
+                  const style = difficultyStyle(s.difficulty);
+                  return (
+                    <div
+                      key={s.question_id}
+                      className={`flex items-center justify-between gap-3 rounded-lg border border-[#232326] ${style.bg} px-3 py-2`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-5 text-xs font-semibold text-gray-500 shrink-0">
+                          #{s.rank}
+                        </span>
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`}
+                        />
+                        <span className="text-sm text-gray-200 truncate">
+                          {s.title}
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold text-orange-500 shrink-0">
+                        {s.score}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
-
-              <div className="flex gap-1">
-                {heatmapWeeks.map((week, wi) => (
-                  <div key={wi} className="flex flex-col gap-1">
-                    {week.map((day) => (
-                      <div
-                        key={day.date}
-                        title={`${day.date} • ${day.count} submission${
-                          day.count === 1 ? "" : "s"
-                        }`}
-                        className={`w-3 h-3 rounded-sm ${heatColor(day.count)}`}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 mt-3 text-[11px] text-gray-600">
-              <span>Less</span>
-              {[0, 1, 2, 3, 4].map((c) => (
-                <span
-                  key={c}
-                  className={`w-3 h-3 rounded-sm ${heatColor(c)}`}
-                />
-              ))}
-              <span>More</span>
-            </div>
+            )}
           </SectionCard>
         </div>
       </div>

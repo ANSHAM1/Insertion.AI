@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Any
-from sqlalchemy import Integer, cast, func, select
+from sqlalchemy import Integer, Date, cast, case, func, select
 
 from src.database.connection import SessionLocal
-from src.database.models import DailySchedule, ScheduleItem, ReadingArticle, Job, CodeSolution
+from src.database.models import DailySchedule, ScheduleItem, ReadingArticle, Job, CodeSolution, CodingStatus
 
 
 
@@ -168,133 +168,226 @@ class DashboardDispatch:
 
 
 
-    def coding_overview(self) -> dict[str, Any]:
-            """Overall attempt count, average score, and average time taken."""
-    
-            row = self.db.execute(
-                select(
-                    func.count(CodeSolution.question_id).label("total_attempts"),
-                    func.coalesce(func.avg(CodeSolution.score), 0.0).label("avg_score"),
-                    func.coalesce(func.avg(CodeSolution.time_taken), 0.0).label("avg_time_taken"),
-                )
-            ).one()
-    
-            return {
-                "total_attempts": row.total_attempts,
+    def coding_daily_attempts_current_month(self) -> list[dict[str, Any]]:
+        today = date.today()
+        first = today.replace(day=1)
+
+        rows = self.db.execute(
+            select(
+                CodeSolution.generated_date,
+                func.count().label("attempts"),
+            )
+            .where(
+                func.extract("year", CodeSolution.generated_date) == today.year,
+                func.extract("month", CodeSolution.generated_date) == today.month,
+            )
+            .group_by(CodeSolution.generated_date)
+        ).all()
+
+        attempts = {
+            row.generated_date: row.attempts
+            for row in rows
+        }
+
+        result : list[dict[str, Any]] = []
+
+        current = first
+        while current <= today:
+            result.append({
+                "date": current,
+                "attempts": attempts.get(current, 0),
+            })
+            current += timedelta(days=1)
+
+        return result
+
+    def coding_overview_last_30_days(self) -> dict[str, Any]:
+        since = date.today() - timedelta(days=29)
+
+        per_attempt = (
+            select(
+                CodeSolution.generated_date,
+                CodeSolution.question_id,
+                CodeSolution.difficulty,
+                func.avg(CodeSolution.score).label("avg_score"),
+                func.avg(CodeSolution.time_taken).label("avg_time"),
+            )
+            .where(CodeSolution.generated_date >= since)
+            .group_by(
+                CodeSolution.generated_date,
+                CodeSolution.question_id,
+                CodeSolution.difficulty,
+            )
+            .subquery()
+        )
+
+        overall = self.db.execute(
+            select(
+                func.count().label("unique_attempts"),
+                func.coalesce(func.avg(per_attempt.c.avg_score), 0.0).label("avg_score"),
+                func.coalesce(func.avg(per_attempt.c.avg_time), 0.0).label("avg_time"),
+            )
+        ).one()
+
+        difficulty_rows = self.db.execute(
+            select(
+                per_attempt.c.difficulty,
+                func.count().label("unique_attempts"),
+                func.coalesce(func.avg(per_attempt.c.avg_score), 0.0).label("avg_score"),
+                func.coalesce(func.avg(per_attempt.c.avg_time), 0.0).label("avg_time"),
+            )
+            .group_by(per_attempt.c.difficulty)
+        ).all()
+
+        difficulty = {
+            row.difficulty.value.lower(): {
+                "unique_attempts": row.unique_attempts,
                 "avg_score": round(row.avg_score, 2),
-                "avg_time_taken_minutes": round(row.avg_time_taken, 2),
+                "avg_time_taken_minutes": round(row.avg_time, 2),
             }
+            for row in difficulty_rows
+        }
+
+        return {
+            "overall": {
+                "unique_attempts": overall.unique_attempts,
+                "avg_score": round(overall.avg_score, 2),
+                "avg_time_taken_minutes": round(overall.avg_time, 2),
+            },
+            "difficulty": difficulty,
+        }
     
-    def coding_by_difficulty(self) -> list[dict[str, Any]]:
-            """Attempts, average score, and time efficiency per difficulty tier."""
-    
-            rows = self.db.execute(
-                select(
-                    CodeSolution.difficulty,
-                    func.count(CodeSolution.question_id).label("attempts"),
-                    func.coalesce(func.avg(CodeSolution.score), 0.0).label("avg_score"),
-                    func.coalesce(
-                        func.avg(CodeSolution.time_taken * 1.0 / CodeSolution.time_limit), 0.0
-                    ).label("avg_time_efficiency"),
-                )
-                .group_by(CodeSolution.difficulty)
-                .order_by(CodeSolution.difficulty)
-            ).all()
-    
-            return [
-                {
-                    "difficulty": row.difficulty.value,
-                    "attempts": row.attempts,
-                    "avg_score": round(row.avg_score, 2),
-                    "avg_time_efficiency": round(row.avg_time_efficiency, 2),  # time_taken / time_limit
-                }
-                for row in rows
-            ]
-    
-    def coding_status_breakdown(self) -> list[dict[str, Any]]:
-            """Counts grouped by solution status (solved/attempted/etc)."""
-    
-            rows = self.db.execute(
-                select(CodeSolution.status, func.count(CodeSolution.question_id).label("count"))
-                .group_by(CodeSolution.status)
-                .order_by(func.count(CodeSolution.question_id).desc())
-            ).all()
-    
-            return [
-                {"status": row.status.value if row.status else "Not Attempted", "count": row.count}
-                for row in rows
-            ]
+    def average_failed_attempts_by_difficulty(self) -> list[dict[str, Any]]:
+        per_attempt = (
+            select(
+                CodeSolution.generated_date,
+                CodeSolution.question_id,
+                CodeSolution.difficulty,
+                func.sum(
+                    case(
+                        (CodeSolution.status == CodingStatus.FAILED, 1),
+                        else_=0,
+                    )
+                ).label("failed_attempts"),
+            )
+            .group_by(
+                CodeSolution.generated_date,
+                CodeSolution.question_id,
+                CodeSolution.difficulty,
+            )
+            .subquery()
+        )
+
+        rows = self.db.execute(
+            select(
+                per_attempt.c.difficulty,
+                func.round(
+                    func.avg(per_attempt.c.failed_attempts),
+                    2,
+                ).label("avg_failing_attempts"),
+            )
+            .group_by(per_attempt.c.difficulty)
+        ).all()
+
+        return [
+            {
+                "difficulty": row.difficulty.value,
+                "avg_failing_attempts": float(row.avg_failing_attempts),
+            }
+            for row in rows
+        ]
     
     def coding_language_distribution(self) -> list[dict[str, Any]]:
-            """Which languages get used most often."""
+        rows = self.db.execute(
+            select(CodeSolution.language, func.count(CodeSolution.question_id).label("count"))
+            .where(CodeSolution.language.is_not(None))
+            .group_by(CodeSolution.language)
+            .order_by(func.count(CodeSolution.question_id).desc())
+        ).all()
     
-            rows = self.db.execute(
-                select(CodeSolution.language, func.count(CodeSolution.question_id).label("count"))
-                .where(CodeSolution.language.is_not(None))
-                .group_by(CodeSolution.language)
-                .order_by(func.count(CodeSolution.question_id).desc())
-            ).all()
-    
-            return [{"language": row.language, "count": row.count} for row in rows]
+        return [{"language": row.language, "count": row.count} for row in rows]
     
     def coding_streak(self) -> dict[str, Any]:
-            """
-            Current and best consecutive-day solve streaks, based on
-            completed_at. Same gaps-and-islands approach as schedule_streaks.
-            """
-    
-            rows = self.db.execute(
-                select(func.date(CodeSolution.completed_at).label("date"))
-                .where(CodeSolution.completed_at.is_not(None))
-                .group_by(func.date(CodeSolution.completed_at))
-                .order_by(func.date(CodeSolution.completed_at))
-            ).all()
-    
-            current = best = 0
-            prev_date = None
-    
-            for row in rows:
-                day = (
-                    datetime.strptime(row.date, "%Y-%m-%d").date()
-                    if isinstance(row.date, str)
-                    else row.date
-                )
-                contiguous = prev_date is not None and day == prev_date + timedelta(days=1)
-    
-                current = current + 1 if contiguous else 1
-                best = max(best, current)
-                prev_date = day
-    
-            return {"current_streak": current, "best_streak": best}
+        rows = list(self.db.execute(
+            select(cast(CodeSolution.completed_at, Date).label("day"))
+            .where(CodeSolution.completed_at.is_not(None))
+            .group_by(cast(CodeSolution.completed_at, Date))
+            .order_by(cast(CodeSolution.completed_at, Date))
+        ).all()
+        )
+
+        if not rows:
+            return {
+                "current_streak": 0,
+                "best_streak": 0,
+            }
+
+        days = [row.day for row in rows]
+
+        best = 1
+        streak = 1
+
+        for i in range(1, len(days)):
+            if days[i] == days[i - 1] + timedelta(days=1):
+                streak += 1
+            else:
+                streak = 1
+
+            best = max(best, streak)
+
+        today = date.today()
+
+        if days[-1] == today:
+            current = 1
+            idx = len(days) - 2
+
+            while idx >= 0 and days[idx] == days[idx + 1] - timedelta(days=1):
+                current += 1
+                idx -= 1
+
+        elif days[-1] == today - timedelta(days=1):
+            current = 1
+            idx = len(days) - 2
+
+            while idx >= 0 and days[idx] == days[idx + 1] - timedelta(days=1):
+                current += 1
+                idx -= 1
+
+        else:
+            current = 0
+
+        return {
+            "current_streak": current,
+            "best_streak": best,
+        }
+
     
     def top_scoring_solutions(self, limit: int = 10) -> list[dict[str, Any]]:
-            """Highest-scoring solved problems, ranked with RANK."""
+        rank = func.rank().over(order_by=CodeSolution.score.desc()).label("rank")
     
-            rank = func.rank().over(order_by=CodeSolution.score.desc()).label("rank")
+        rows = self.db.execute(
+            select(
+                CodeSolution.question_id,
+                CodeSolution.title,
+                CodeSolution.difficulty,
+                CodeSolution.score,
+                rank,
+            )
+            .where(CodeSolution.score.is_not(None))
+            .order_by(rank)
+            .limit(limit)
+        ).all()
     
-            rows = self.db.execute(
-                select(
-                    CodeSolution.question_id,
-                    CodeSolution.title,
-                    CodeSolution.difficulty,
-                    CodeSolution.score,
-                    rank,
-                )
-                .where(CodeSolution.score.is_not(None))
-                .order_by(rank)
-                .limit(limit)
-            ).all()
-    
-            return [
-                {
-                    "rank": row.rank,
-                    "question_id": row.question_id,
-                    "title": row.title,
-                    "difficulty": row.difficulty.value,
-                    "score": row.score,
-                }
-                for row in rows
-            ]
+        return [
+            {
+                "rank": row.rank,
+                "question_id": row.question_id,
+                "title": row.title,
+                "difficulty": row.difficulty.value,
+                "score": row.score,
+            }
+            for row in rows
+        ]
 
 
 
@@ -314,7 +407,13 @@ def dashboard(command: str, _: dict[Any, Any]) -> dict[str, Any]:
             "reading_overview": dd.reading_overview(),
             "top_reading_sources": dd.top_reading_sources(),
             "job_match_quality_by_resume": dd.job_match_quality_by_resume(),
-            "job_match_distribution": dd.job_match_distribution()
+            "job_match_distribution": dd.job_match_distribution(),
+            "average_failed_attempts_by_difficulty": dd.average_failed_attempts_by_difficulty(),
+            "coding_language_distribution": dd.coding_language_distribution(),
+            "coding_streak": dd.coding_streak(),
+            "top_scoring_solutions": dd.top_scoring_solutions(),
+            "coding_daily_attempts_current_month": dd.coding_daily_attempts_current_month(),
+            "coding_overview_last_30_days": dd.coding_overview_last_30_days()
         }
 
     finally:

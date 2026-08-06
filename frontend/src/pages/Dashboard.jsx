@@ -7,16 +7,10 @@ import {
   Building2,
   Clock,
   CalendarDays,
-  BellRing,
-  Sparkles,
   ListChecks,
   CheckCircle2,
-  Circle,
-  Plus,
   PlayCircle,
   Flame,
-  Search as SearchIcon,
-  ArrowRight,
 } from "lucide-react";
 
 import {
@@ -35,6 +29,14 @@ import ArticleStatisticsCard from "../components/dashboard/ArticleStatisticsCard
 import StatCard from "../components/dashboard/StatCard";
 
 import { useApp } from "../context/AppContext";
+
+const DIFFICULTY_ORDER = ["easy", "medium", "hard"];
+
+const DIFFICULTY_DOT = {
+  easy: "bg-emerald-500",
+  medium: "bg-yellow-500",
+  hard: "bg-red-500",
+};
 
 export default function Dashboard() {
   const {
@@ -113,6 +115,21 @@ export default function Dashboard() {
 
   const maxVal = Math.max(...productivityData.map((d) => d.value));
 
+  // --- Data for the two lower sections (Coding Performance / Job Applications) ---
+  const codingOverview = dashboardData?.coding_overview_last_30_days;
+  const codingStreak = dashboardData?.coding_streak;
+  const jobMatchDistribution = dashboardData?.job_match_distribution ?? [];
+  const jobMatchByResume = dashboardData?.job_match_quality_by_resume ?? [];
+
+  const maxJobsInBucket = Math.max(
+    1,
+    ...jobMatchDistribution.map((b) => b.num_jobs),
+  );
+
+  const hasDifficultyData =
+    codingOverview?.difficulty &&
+    Object.keys(codingOverview.difficulty).length > 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -144,7 +161,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-        {/* Today's Article */}
         <ArticleStatisticsCard
           article={article}
           articleLoading={articleLoading}
@@ -153,69 +169,206 @@ export default function Dashboard() {
           top_reading_sources={dashboardData?.top_reading_sources ?? []}
         />
 
-        {/* Productivity chart */}
         <ProductivityOverviewCard
           data={dashboardData?.last_thirty_days_progress ?? []}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-        {/* Recent activity + quick actions */}
-        <div className="lg:col-span-2 space-y-5">
-          <SectionCard title="Recent Activity">
-            <div className="space-y-4">
-              {recentActivity.map((a) => (
-                <div key={a.id} className="flex items-center justify-between">
-                  <p className="text-sm text-gray-300">{a.text}</p>
-                  <span className="text-xs text-gray-600 whitespace-nowrap ml-3">
-                    {a.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Quick Actions">
-            <div className="flex flex-wrap gap-3">
-              <button className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white text-sm px-4 py-2.5 rounded-xl transition-colors">
-                <Plus size={15} /> New Task
-              </button>
-              <button className="flex items-center gap-2 bg-[#1a1a1c] hover:bg-[#232326] border border-[#232326] text-gray-200 text-sm px-4 py-2.5 rounded-xl transition-colors">
-                <PlayCircle size={15} /> Start Coding
-              </button>
-              <button className="flex items-center gap-2 bg-[#1a1a1c] hover:bg-[#232326] border border-[#232326] text-gray-200 text-sm px-4 py-2.5 rounded-xl transition-colors">
-                <SearchIcon size={15} /> Find Jobs
-              </button>
-              <button className="flex items-center gap-2 bg-[#1a1a1c] hover:bg-[#232326] border border-[#232326] text-gray-200 text-sm px-4 py-2.5 rounded-xl transition-colors">
-                <CalendarDays size={15} /> View Calendar
-              </button>
-            </div>
-          </SectionCard>
-        </div>
-
-        {/* AI suggestions */}
         <SectionCard
-          title="AI Suggestions"
-          icon={Sparkles}
+          title="Coding Performance"
+          icon={Code2}
           className="lg:col-span-2"
         >
-          <div className="space-y-3">
-            {aiSuggestions.map((s) => (
-              <div
-                key={s.id}
-                className="flex items-start gap-3 bg-[#1a1a1c] border border-[#232326] rounded-xl p-3"
-              >
-                <Sparkles
-                  size={15}
-                  className="text-orange-500 mt-0.5 shrink-0"
-                />
-                <p className="text-sm text-gray-300">{s.text}</p>
+          <div className="space-y-5">
+            {/* Streak row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 bg-[#0d0d0f] border border-[#232326] rounded-lg px-4 py-3">
+                <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                  <Flame size={16} className="text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-white leading-none">
+                    {codingStreak?.current_streak ?? 0}
+                    <span className="text-xs text-gray-500 font-normal ml-1">
+                      days
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Current Streak</p>
+                </div>
               </div>
-            ))}
+              <div className="flex items-center gap-3 bg-[#0d0d0f] border border-[#232326] rounded-lg px-4 py-3">
+                <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={16} className="text-orange-500" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-white leading-none">
+                    {codingStreak?.best_streak ?? 0}
+                    <span className="text-xs text-gray-500 font-normal ml-1">
+                      days
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Best Streak</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Overall last-30-days stats */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center bg-[#0d0d0f] border border-[#232326] rounded-lg py-3">
+                <p className="text-base font-semibold text-white">
+                  {codingOverview?.overall?.unique_attempts ?? 0}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1 flex items-center justify-center gap-1">
+                  <PlayCircle size={11} /> Attempts
+                </p>
+              </div>
+              <div className="text-center bg-[#0d0d0f] border border-[#232326] rounded-lg py-3">
+                <p className="text-base font-semibold text-white">
+                  {codingOverview?.overall?.avg_score ?? 0}%
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1 flex items-center justify-center gap-1">
+                  <ListChecks size={11} /> Avg Score
+                </p>
+              </div>
+              <div className="text-center bg-[#0d0d0f] border border-[#232326] rounded-lg py-3">
+                <p className="text-base font-semibold text-white">
+                  {codingOverview?.overall?.avg_time_taken_minutes ?? 0}m
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1 flex items-center justify-center gap-1">
+                  <Clock size={11} /> Avg Time
+                </p>
+              </div>
+            </div>
+
+            {/* Difficulty breakdown */}
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Last 30 Days by Difficulty
+              </p>
+
+              {hasDifficultyData ? (
+                DIFFICULTY_ORDER.filter(
+                  (level) => codingOverview.difficulty[level],
+                ).map((level) => {
+                  const d = codingOverview.difficulty[level];
+                  return (
+                    <div
+                      key={level}
+                      className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-[#232326] bg-[#0d0d0f] hover:border-orange-500/40 hover:bg-[#18181b] transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${DIFFICULTY_DOT[level]}`}
+                        />
+                        <span className="text-sm text-gray-300 capitalize">
+                          {level}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span>{d.unique_attempts} solved</span>
+                        <span>{d.avg_score}% score</span>
+                        <span>{d.avg_time_taken_minutes}m avg</span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-gray-600 italic px-1">
+                  No coding activity in the last 30 days.
+                </p>
+              )}
+            </div>
           </div>
-          <button className="mt-4 w-full flex items-center justify-center gap-1 border border-orange-600/40 text-orange-500 hover:bg-orange-600/10 text-sm py-2.5 rounded-xl transition-colors">
-            View All Insights <ArrowRight size={14} />
-          </button>
+        </SectionCard>
+
+        <SectionCard
+          title="Job Applications"
+          icon={Briefcase}
+          className="lg:col-span-2"
+        >
+          <div className="space-y-5">
+            {/* Match quality by resume */}
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Match Quality by Resume
+              </p>
+
+              {jobMatchByResume.length === 0 ? (
+                <p className="text-xs text-gray-600 italic px-1">
+                  No resume match data yet.
+                </p>
+              ) : (
+                jobMatchByResume.map((r) => (
+                  <div
+                    key={r.resume}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-[#232326] bg-[#0d0d0f] hover:border-orange-500/40 hover:bg-[#18181b] transition-colors"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Building2 size={13} className="text-gray-500 shrink-0" />
+                      <span className="text-sm text-gray-300 truncate">
+                        {r.resume}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs text-gray-500">
+                        {r.total_jobs} jobs
+                      </span>
+                      <div className="w-20 h-1.5 rounded-full bg-[#232326] overflow-hidden">
+                        <div
+                          className="h-full bg-orange-500 rounded-full"
+                          style={{
+                            width: `${Math.min(100, r.avg_match_percentage)}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-white w-10 text-right">
+                        {r.avg_match_percentage}%
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Match distribution buckets */}
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500 uppercase tracking-wide">
+                Match Distribution
+              </p>
+
+              {jobMatchDistribution.length === 0 ? (
+                <p className="text-xs text-gray-600 italic px-1">
+                  No job match data yet.
+                </p>
+              ) : (
+                jobMatchDistribution.map((b) => (
+                  <div
+                    key={b.bucket}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[#0d0d0f] transition-colors"
+                  >
+                    <span className="text-xs text-gray-500 w-16 shrink-0">
+                      Group {b.bucket}
+                    </span>
+                    <div className="flex-1 h-2 rounded-full bg-[#232326] overflow-hidden">
+                      <div
+                        className="h-full bg-orange-500/80 rounded-full"
+                        style={{
+                          width: `${(b.num_jobs / maxJobsInBucket) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500 w-24 text-right shrink-0">
+                      {b.min_match_percentage}%–{b.max_match_percentage}%
+                    </span>
+                    <span className="text-xs text-white w-16 text-right shrink-0">
+                      {b.num_jobs} jobs
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </SectionCard>
       </div>
     </div>
