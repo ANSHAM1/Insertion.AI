@@ -14,6 +14,7 @@ import {
   Circle,
   Plus,
   PlayCircle,
+  Flame,
   Search as SearchIcon,
   ArrowRight,
 } from "lucide-react";
@@ -29,71 +30,26 @@ import {
 
 import { SectionCard } from "../components/UI";
 
+import ProductivityOverviewCard from "../components/dashboard/ProductivityOverviewCard";
+import ArticleStatisticsCard from "../components/dashboard/ArticleStatisticsCard";
+import StatCard from "../components/dashboard/StatCard";
+
 import { useApp } from "../context/AppContext";
-
-const iconMap = { ClipboardList, Code2, Briefcase, Building2, Clock };
-
-function StatCard({ label, value, unit, sub, icon, ring }) {
-  const Icon = iconMap[icon];
-
-  return (
-    <div className="card card-hover p-4 flex items-start justify-between">
-      <div>
-        <div className="flex items-center gap-2 text-gray-400 text-xs mb-2">
-          <span className="w-7 h-7 rounded-lg bg-orange-600/15 flex items-center justify-center">
-            <Icon size={14} className="text-orange-500" />
-          </span>
-          {label}
-        </div>
-        <p className="text-2xl font-bold text-white">
-          {value}{" "}
-          {unit && (
-            <span className="text-sm font-normal text-gray-500">{unit}</span>
-          )}
-        </p>
-        <p className="text-xs text-gray-500 mt-1">{sub}</p>
-      </div>
-      {ring && (
-        <div className="relative w-9 h-9">
-          <svg viewBox="0 0 36 36" className="w-9 h-9 -rotate-90">
-            <circle
-              cx="18"
-              cy="18"
-              r="15.5"
-              fill="none"
-              stroke="#232326"
-              strokeWidth="3"
-            />
-            <circle
-              cx="18"
-              cy="18"
-              r="15.5"
-              fill="none"
-              stroke="#ff6a1a"
-              strokeWidth="3"
-              strokeDasharray={`${(ring / 100) * 97.4} 97.4`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-[9px] text-white font-semibold">
-            {ring}%
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function Dashboard() {
   const {
+    planner,
+
     article,
     articleLoading,
     updateArticleStatus,
 
+    jobs,
+
     dashboardData,
     dashboardLoading,
   } = useApp();
-  
+
   const [tasks, setTasks] = useState(todaysTasks);
   const [datetime, setDateTime] = useState(new Date());
 
@@ -105,13 +61,35 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  function toLocalDateString(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+
+    return `${y}-${m}-${d}`;
+  }
+
+  const todayString = toLocalDateString(new Date());
+
+  const tasksToday = planner?.find((d) => d.date === todayString)?.items ?? [];
+  const completedToday = tasksToday.filter((task) => task.completed).length;
+
   const stats = [
     {
       label: "Tasks Today",
-      value: "12",
-      sub: "5 completed",
-      icon: "ClipboardList",
-      ring: 42,
+      value: tasksToday.length,
+      sub: `${completedToday} of ${tasksToday.length} completed`,
+      icon: ClipboardList,
+      ring:
+        tasksToday.length === 0
+          ? 0
+          : Math.round((completedToday * 100) / tasksToday.length),
+    },
+    {
+      label: "Task Streak",
+      value: dashboardData?.schedule_streaks?.current_streak ?? 0,
+      sub: `Best: ${dashboardData?.schedule_streaks?.best_streak ?? 0} days`,
+      icon: Flame,
     },
     {
       label: "Coding Streak",
@@ -126,13 +104,6 @@ export default function Dashboard() {
       sub: "This Month",
       icon: "Briefcase",
     },
-    {
-      label: "Drives Registered",
-      value: "07",
-      sub: "Upcoming",
-      icon: "Building2",
-    },
-    { label: "Focus Time", value: "04h 32m", sub: "Today", icon: "Clock" },
   ];
 
   const toggleTask = (id) =>
@@ -144,11 +115,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Good Morning, {user.name.split(" ")[0]}!
+            Good Morning, {"Ansham Maurya".split(" ")[0]}!
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             Here's what's happening with your productivity today.
@@ -167,99 +137,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {stats.map((s) => (
-          <StatCard key={s.label} {...s} />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <StatCard key={stat.label} {...stat} />
         ))}
       </div>
 
-      {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
-        {/* Today's tasks */}
-        <SectionCard
-          title="Today's Tasks"
-          icon={ListChecks}
-          action={
-            <button className="text-xs text-orange-500 hover:underline">
-              View all
-            </button>
-          }
-        >
-          <div className="space-y-3">
-            {tasks.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => toggleTask(t.id)}
-                className="w-full flex items-start gap-3 text-left group"
-              >
-                {t.done ? (
-                  <CheckCircle2
-                    size={18}
-                    className="text-orange-500 mt-0.5 shrink-0"
-                  />
-                ) : (
-                  <Circle
-                    size={18}
-                    className="text-gray-600 mt-0.5 shrink-0 group-hover:text-gray-400"
-                  />
-                )}
-                <div>
-                  <p
-                    className={`text-sm ${t.done ? "text-gray-500 line-through" : "text-gray-200"}`}
-                  >
-                    {t.title}
-                  </p>
-                  <p className="text-xs text-gray-600">{t.time}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </SectionCard>
+        {/* Today's Article */}
+        <ArticleStatisticsCard
+          article={article}
+          articleLoading={articleLoading}
+          updateArticleStatus={updateArticleStatus}
+          reading_overview={dashboardData?.reading_overview ?? {}}
+          top_reading_sources={dashboardData?.top_reading_sources ?? []}
+        />
 
         {/* Productivity chart */}
-        <SectionCard
-          title="Productivity Overview"
-          className="lg:col-span-2"
-          action={
-            <select className="bg-[#1a1a1c] border border-[#232326] text-xs text-gray-400 rounded-lg px-2 py-1">
-              <option>This Week</option>
-              <option>This Month</option>
-            </select>
-          }
-        >
-          <div className="flex items-end justify-between gap-3 h-52 px-2">
-            {productivityData.map((d) => (
-              <div
-                key={d.day}
-                className="flex flex-col items-center gap-2 flex-1"
-              >
-                <div className="w-full flex items-end justify-center h-40">
-                  <div
-                    className="w-6 rounded-t-md accent-gradient"
-                    style={{ height: `${(d.value / maxVal) * 100}%` }}
-                  />
-                </div>
-                <span className="text-xs text-gray-500">{d.day}</span>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-
-        {/* Upcoming */}
-        <SectionCard title="Upcoming" icon={BellRing}>
-          <div className="space-y-4">
-            {upcoming.map((u) => (
-              <div key={u.id} className="flex items-start gap-3">
-                <span className="w-2 h-2 rounded-full bg-orange-500 mt-1.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-200">{u.title}</p>
-                  <p className="text-xs text-gray-600">{u.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
+        <ProductivityOverviewCard
+          data={dashboardData?.last_thirty_days_progress ?? []}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">

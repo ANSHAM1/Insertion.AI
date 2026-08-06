@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "planner_reflection" : planner,
 
         "article"             : article,
-        "planner_read_status" : article,
+        "article_read_status" : article,
 
         "job"        : job,
         "job_status" : job,

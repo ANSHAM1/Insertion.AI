@@ -10,12 +10,12 @@ export async function extractArticle() {
 }
 
 
-export async function updateArticleReadStatus(articleId, status) {
+export async function updateArticleStatusApi(articleId, status) {
   return invoke("run_python", {
     command: "article_read_status",
     payload: {
       id: articleId,
-      completed : status,
+      status : status,
     },
   });
 }

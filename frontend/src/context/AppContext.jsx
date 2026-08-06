@@ -11,7 +11,7 @@ import {
 
 import { extractDashboard } from "../apis/dashboard";
 
-import { extractArticle, updateArticleReadStatus } from "../apis/article";
+import { extractArticle, updateArticleStatusApi } from "../apis/article";
 
 import {
   fetchCodingQuestions,
@@ -163,7 +163,7 @@ export function AppProvider({ children }) {
     }
   }
 
-  async function updateArticleStatus(status) {
+  async function updateArticleStatus(id, status) {
     const previous = article;
 
     setArticle((prev) =>
@@ -176,7 +176,7 @@ export function AppProvider({ children }) {
     );
 
     try {
-      await updateArticleStatusApi(status);
+      await updateArticleStatusApi(id, status);
     } catch (err) {
       setArticle(previous);
       throw err;

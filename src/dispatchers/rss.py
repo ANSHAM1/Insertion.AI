@@ -55,7 +55,7 @@ def article(command: str, payload: dict[Any, Any]):
         elif command == "article_read_status":
             app.read_status(
                 payload["id"],
-                payload["completed"],
+                payload["status"],
             )
             return None
 
