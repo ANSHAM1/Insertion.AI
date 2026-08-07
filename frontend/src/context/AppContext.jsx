@@ -292,14 +292,19 @@ export function AppProvider({ children }) {
     await Promise.all([
       refreshPlanner(),
       refreshJobs(),
-      refreshDashboard(),
       refreshArticles(),
       refreshCodingQuestions(),
     ]);
 
+    await refreshDashboard();
+
     setLastSync(new Date());
     setSyncing(false);
   }
+
+  useEffect(() => {
+    refreshAll();
+  }, []);
 
   useEffect(() => {
     refreshAll();

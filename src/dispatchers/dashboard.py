@@ -1,3 +1,4 @@
+from calendar import monthrange
 from datetime import datetime, timedelta, date
 from typing import Any
 from sqlalchemy import Integer, Date, cast, case, func, select
@@ -168,9 +169,16 @@ class DashboardDispatch:
 
 
 
-    def coding_daily_attempts_current_month(self) -> list[dict[str, Any]]:
+    def coding_daily_attempts_last_3_months(self) -> list[dict[str, Any]]:
         today = date.today()
-        first = today.replace(day=1)
+
+        if today.month > 2:
+            start = date(today.year, today.month - 2, 1)
+        else:
+            start = date(today.year - 1, today.month + 10, 1)
+
+        last_day = monthrange(today.year, today.month)[1]
+        end = date(today.year, today.month, last_day)
 
         rows = self.db.execute(
             select(
@@ -178,8 +186,8 @@ class DashboardDispatch:
                 func.count().label("attempts"),
             )
             .where(
-                func.extract("year", CodeSolution.generated_date) == today.year,
-                func.extract("month", CodeSolution.generated_date) == today.month,
+                CodeSolution.generated_date >= start,
+                CodeSolution.generated_date <= end,
             )
             .group_by(CodeSolution.generated_date)
         ).all()
@@ -189,14 +197,16 @@ class DashboardDispatch:
             for row in rows
         }
 
-        result : list[dict[str, Any]] = []
+        result: list[dict[str, Any]] = []
 
-        current = first
-        while current <= today:
-            result.append({
-                "date": current,
-                "attempts": attempts.get(current, 0),
-            })
+        current = start
+        while current <= end:
+            result.append(
+                {
+                    "date": current,
+                    "attempts": attempts.get(current, 0),
+                }
+            )
             current += timedelta(days=1)
 
         return result
@@ -412,7 +422,7 @@ def dashboard(command: str, _: dict[Any, Any]) -> dict[str, Any]:
             "coding_language_distribution": dd.coding_language_distribution(),
             "coding_streak": dd.coding_streak(),
             "top_scoring_solutions": dd.top_scoring_solutions(),
-            "coding_daily_attempts_current_month": dd.coding_daily_attempts_current_month(),
+            "coding_daily_attempts_last_3_months": dd.coding_daily_attempts_last_3_months(),
             "coding_overview_last_30_days": dd.coding_overview_last_30_days()
         }
 
