@@ -24,8 +24,7 @@ export default function Dashboard() {
     jobs,
     codingQuestions,
 
-    dashboardData,
-    dashboardLoading,
+    dashboardData
   } = useApp();
 
   const [datetime, setDateTime] = useState(new Date());

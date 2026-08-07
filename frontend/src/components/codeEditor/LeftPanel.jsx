@@ -33,6 +33,7 @@ export default function LeftPanel({
 
         {tab === "submissions" && (
           <SubmissionTab
+            solutions={question.solutions}
             metadata={metadata}
             lastResultIsCurrent={lastResultIsCurrent}
           />

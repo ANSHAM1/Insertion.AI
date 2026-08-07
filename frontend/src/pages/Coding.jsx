@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Target } from "lucide-react";
+import { Target, Code2 } from "lucide-react";
 
 import { useApp } from "../context/AppContext";
 
@@ -8,10 +8,9 @@ import StatBox from "../components/coding/StatBox";
 import StreakBox from "../components/coding/StreakBox";
 import GenerateBar from "../components/coding/GenerateBar";
 import ProblemsList from "../components/coding/ProblemsList";
-import AvgFailedAttempts from "../components/coding/AvgFailedAttempts";
+import AvgSolvedAttempts from "../components/coding/AvgSolvedAttempts";
 import ActivityHeatmap from "../components/coding/ActivityHeatmap";
 import LanguageDistribution from "../components/coding/LanguageDistribution";
-import TopScoringSolutions from "../components/coding/TopScoringSolutions";
 
 import {
   MOCK_DIFFICULTY_STATS,
@@ -43,13 +42,20 @@ export default function Coding() {
     best_streak: 0,
   };
 
-  const avgFailedAttempts = useMemo(() => {
-    const rows = dashboardData?.average_failed_attempts_by_difficulty || [];
+  const avgSolvedAttempts = useMemo(() => {
+    const rows = dashboardData?.solved_attempts_by_difficulty ?? [];
+
     return DIFFICULTY_ORDER.map((level) => {
       const match = rows.find(
         (d) => String(d.difficulty).toLowerCase() === level.toLowerCase(),
       );
-      return { label: level, value: match ? match.avg_failing_attempts : 0 };
+
+      return {
+        label: level,
+        value: match
+          ? Math.round((match.solved_attempts / match.total_attempts) * 100)
+          : 0,
+      };
     });
   }, [dashboardData]);
 
@@ -62,14 +68,26 @@ export default function Coding() {
 
   const topScoringSolutions = dashboardData?.top_scoring_solutions || [];
 
-  const totalSolved = Object.values(MOCK_DIFFICULTY_STATS).reduce(
-    (a, d) => a + d.solved,
-    0,
-  );
-  const totalProblems = Object.values(MOCK_DIFFICULTY_STATS).reduce(
-    (a, d) => a + d.total,
-    0,
-  );
+  const questionStats = useMemo(() => {
+    const allQuestions = questions ?? [];
+
+    const total = allQuestions.length;
+
+    const solved = allQuestions.filter((q) =>
+      q.solutions?.some((s) => s.metadata?.status === "ACCEPTED"),
+    ).length;
+
+    const attempted = allQuestions.filter(
+      (q) => q.solutions && q.solutions.length > 0,
+    ).length;
+
+    return {
+      total,
+      solved,
+      attempted,
+      accuracy: attempted === 0 ? 0 : Math.round((solved * 100) / attempted),
+    };
+  }, [questions]);
 
   const handleGenerate = (prompt) => {
     setResetSignal((n) => n + 1);
@@ -89,12 +107,21 @@ export default function Coding() {
         <GenerateBar loading={codingLoading} onGenerate={handleGenerate} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <StatBox
           icon={Target}
-          value={`${totalSolved}/${totalProblems}`}
+          value={`${questionStats.solved}/${questionStats.total}`}
           label="Solved / Total"
+          sub={`${questionStats.total - questionStats.solved} remaining`}
         />
+
+        <StatBox
+          icon={Code2}
+          value={`${questionStats.accuracy}%`}
+          label="Accuracy"
+          sub={`${questionStats.attempted} attempted`}
+        />
+
         <StreakBox
           current={codingStreak.current_streak}
           best={codingStreak.best_streak}
@@ -110,12 +137,11 @@ export default function Coding() {
         />
 
         <div className="space-y-5">
-          <AvgFailedAttempts data={avgFailedAttempts} />
+          <AvgSolvedAttempts data={avgSolvedAttempts} />
           <ActivityHeatmap
             dailyData={dashboardData?.coding_daily_attempts_last_3_months}
           />
           <LanguageDistribution data={languageDistribution} />
-          <TopScoringSolutions solutions={topScoringSolutions} />
         </div>
       </div>
     </div>

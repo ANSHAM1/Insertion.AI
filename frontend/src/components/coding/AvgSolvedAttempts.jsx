@@ -4,10 +4,7 @@ import { SectionCard } from "../UI";
 import MetricRow from "./MetricRow";
 import { DIFFICULTY_COLOR } from "../../constants/constants";
 
-// `data` items: { label: "Easy" | "Medium" | "Hard", value: <percentage> }
-// `value` is already a percentage from the backend — used directly,
-// never recomputed against a local max.
-export default function AvgFailedAttempts({ data }) {
+export default function AvgSolvedAttempts({ data }) {
   return (
     <SectionCard title="Avg Failed Attempts" icon={BarChart3}>
       <div className="space-y-4">

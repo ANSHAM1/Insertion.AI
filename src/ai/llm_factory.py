@@ -2,7 +2,6 @@ from typing import Any
 from pydantic import SecretStr
 
 from langchain_openai import ChatOpenAI
-from openai import ( APIConnectionError, APITimeoutError, InternalServerError, RateLimitError, OpenAIError )
 
 from src.config.settings import get_settings
 
@@ -70,7 +69,12 @@ class FailoverLLM:
             try:
                 return llm.with_structured_output(schema=schema).invoke(input, **kwargs) # type: ignore
 
-            except ( RateLimitError, APITimeoutError, APIConnectionError, InternalServerError, OpenAIError ):
+            except Exception:
+                import traceback
+
+                print("LLM FAILED:")
+                traceback.print_exc()
+
                 continue
 
         return None

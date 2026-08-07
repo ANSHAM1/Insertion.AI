@@ -39,9 +39,12 @@ export default function CodeEditor() {
     metadataLoading,
     getCodingMetadata,
     testCaseResults,
+    setTestCaseResults,
     runningCode,
     runCode,
   } = useApp();
+
+  console.log(codingQuestions);
 
   const [languageId, setLanguageId] = useState(LANGUAGES[0].id);
   const [code, setCode] = useState("");
@@ -147,6 +150,7 @@ export default function CodeEditor() {
       console.error(err);
     } finally {
       setShowSubmitModal(false);
+      setTestCaseResults(null);
       navigate("/coding");
     }
   }, [navigate]);
@@ -155,27 +159,25 @@ export default function CodeEditor() {
 
   const lastResultIsCurrent = metadata?.question_id === question?.question_id;
 
-  const handleRun = async () => {
+  const handleRun = useCallback(async () => {
     await runCode(question.summary, code, testcases);
-  };
+  }, [runCode, question, code, testcases]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     setShowSubmitModal(true);
+    setTestCaseResults(null)
 
     const startedAt = startedAtRef.current;
     const submittedAt = new Date();
 
-    const results = testCaseResults?.results ?? []; // <-- this line must be here
+    const results = testCaseResults?.results ?? [];
 
     const frontendMeta = {
       question_id: question.question_id,
       language: LANGUAGE_MAP[languageId],
-
       started_at: startedAt.toISOString(),
       submitted_at: submittedAt.toISOString(),
-
       time_taken: Math.max(0, Math.round((submittedAt - startedAt) / 1000)),
-
       passed_public_tests: testcases.map((tc, index) => ({
         testcase: tc,
         passed: results[index]?.passed ?? false,
@@ -188,18 +190,25 @@ export default function CodeEditor() {
       code,
       frontendMeta,
     );
-  };
+  }, [
+    question,
+    languageId,
+    code,
+    testcases,
+    testCaseResults,
+    getCodingMetadata,
+  ]);
 
-  const handleRunAndEvaluate = async () => {
+  const handleRunAndEvaluate = useCallback(async () => {
     await handleRun();
-
     await handleSubmit();
-  };
+  }, [handleRun, handleSubmit]);
 
   const handleRunAndEvaluateRef = useRef(handleRunAndEvaluate);
+
   useEffect(() => {
     handleRunAndEvaluateRef.current = handleRunAndEvaluate;
-  });
+  }, [handleRunAndEvaluate]);
 
   useEffect(() => {
     if (showSubmitModal) return;
@@ -244,6 +253,7 @@ export default function CodeEditor() {
       <EditorTopBar
         question={question}
         navigate={navigate}
+        setTestCaseResults={setTestCaseResults}
         elapsedSeconds={elapsedSeconds}
         totalSeconds={totalSeconds}
         onRun={handleRun}

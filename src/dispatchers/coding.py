@@ -18,17 +18,14 @@ class CodingGeneratorDispatch(InsertionAIDispatch):
         super().__init__()
         self.user_prompt = user_prompt
         
-    def _helper(self, questions: list[tuple[date, list[Question]]]) -> dict[str, Any]:
+    def _helper(self, questions: list[tuple[date, list[dict[str, Any]]]]) -> dict[str, Any]:
         return {
             "items": [
                 {
                     "generated_date": generated_date.isoformat(),
-                    "questions": [
-                        q.model_dump(mode="json")
-                        for q in questions
-                    ],
+                    "questions": questions_list,
                 }
-                for generated_date, questions in questions
+                for generated_date, questions_list in questions
             ]
         }
 
@@ -109,6 +106,7 @@ class CodingEvaluatorDispatch(InsertionAIDispatch):
         git_repo = GithubRepository()
         
         return self._helper(git_repo.fetch_metadata(github_path))
+
 
 
 def generator(command: str, payload: dict[Any, Any]):

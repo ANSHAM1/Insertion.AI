@@ -1,13 +1,40 @@
 -- last_thirty_days_progress
+WITH dates AS (
+    SELECT CAST(DATEADD(DAY, -29, CAST(GETDATE() AS DATE)) AS DATE) AS [date]
+    UNION ALL
+    SELECT DATEADD(DAY, 1, [date])
+    FROM dates
+    WHERE [date] < CAST(GETDATE() AS DATE)
+),
+daily_progress AS (
+    SELECT
+        ds.schedule_date AS [date],
+        COUNT(si.id) AS num_tasks,
+        COALESCE(
+            SUM(
+                CASE 
+                    WHEN si.completed = 1 THEN 1
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS completed_tasks
+    FROM daily_schedule ds
+    LEFT JOIN schedule_item si
+        ON ds.schedule_date = si.schedule_date
+    WHERE ds.schedule_date >= DATEADD(DAY, -29, CAST(GETDATE() AS DATE))
+      AND ds.schedule_date <= CAST(GETDATE() AS DATE)
+    GROUP BY ds.schedule_date
+)
 SELECT
-    ds.schedule_date               AS [date],
-    COUNT(si.id)                   AS num_tasks,
-    COALESCE(SUM(CAST(si.completed AS INT)), 0) AS completed_tasks
-FROM daily_schedules ds
-LEFT JOIN schedule_items si ON ds.schedule_date = si.schedule_date
-WHERE ds.generated_at >= DATEADD(DAY, -30, SYSUTCDATETIME())
-GROUP BY ds.schedule_date
-ORDER BY ds.schedule_date;
+    d.[date],
+    COALESCE(p.num_tasks, 0) AS num_tasks,
+    COALESCE(p.completed_tasks, 0) AS completed_tasks
+FROM dates d
+LEFT JOIN daily_progress p
+    ON d.[date] = p.[date]
+ORDER BY d.[date]
+OPTION (MAXRECURSION 100);
 
 
 

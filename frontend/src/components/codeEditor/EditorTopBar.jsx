@@ -31,6 +31,7 @@ export default function EditorTopBar({
 
   onRun,
   onSubmit,
+  setTestCaseResults,
 
   focusMode,
   toggleFullscreen,
@@ -52,6 +53,7 @@ export default function EditorTopBar({
         <button
           onClick={() => {
             setFocusMode(false);
+            setTestCaseResults(null)
             navigate("/coding");
           }}
           className="flex items-center gap-1 text-gray-400 hover:text-white text-sm shrink-0 transition-colors"

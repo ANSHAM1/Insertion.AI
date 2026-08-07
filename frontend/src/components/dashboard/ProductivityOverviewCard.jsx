@@ -4,7 +4,7 @@ import { SectionCard } from "../UI";
 export default function ProductivityOverviewCard({ data = [] }) {
   const [hovered, setHovered] = useState(null);
 
-  const values = data.map((d) => ({
+  const values = data.slice(-15).map((d) => ({
     ...d,
     percent:
       d.num_tasks === 0
@@ -103,7 +103,7 @@ export default function ProductivityOverviewCard({ data = [] }) {
                 )}
 
                 <div
-                  className="w-full rounded-t-md bg-gradient-to-t from-orange-600 to-orange-400 transition-all duration-300 ease-out group-hover:from-orange-500 group-hover:to-orange-300 group-hover:shadow-[0_0_12px_rgba(251,146,60,0.35)]"
+                  className="w-full rounded-t bg-gradient-to-t from-orange-600 to-orange-400 transition-all duration-300 ease-out group-hover:from-orange-500 group-hover:to-orange-300 group-hover:shadow-[0_0_12px_rgba(251,146,60,0.35)]"
                   style={{
                     height: `${Math.max(day.percent, 3)}%`,
                   }}
@@ -113,42 +113,27 @@ export default function ProductivityOverviewCard({ data = [] }) {
           </div>
         </div>
 
-        {/* Labels */}
         <div className="flex">
           <div className="w-8" />
 
           <div className="flex flex-1 gap-1">
-            {values.map((day, index) => {
-              const crowded = values.length > 20;
-              const medium = values.length > 12 && values.length <= 20;
-
-              const showLabel = crowded
-                ? true
-                : medium
-                  ? index % 2 === 0
-                  : true;
-
-              return (
-                <div
-                  key={day.date}
-                  className="flex flex-1 justify-center overflow-visible"
+            {values.map((day, index) => (
+              <div
+                key={day.date}
+                className="flex flex-1 justify-center overflow-visible"
+              >
+                <span
+                  className={`text-[10px] text-gray-500 transition-colors ${
+                    hovered === index ? "text-orange-400" : ""
+                  }`}
                 >
-                  {showLabel && (
-                    <span
-                      className={`text-gray-500 transition-colors ${
-                        hovered === index ? "text-orange-400" : ""
-                      } ${
-                        crowded
-                          ? "-rotate-90 origin-center whitespace-nowrap text-[9px]"
-                          : "text-[10px]"
-                      }`}
-                    >
-                      {day.date}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+                  {new Date(day.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

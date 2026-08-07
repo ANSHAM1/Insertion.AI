@@ -248,7 +248,7 @@ export default function Planner() {
                           key={task.id}
                           className={`group absolute rounded-lg border px-2 py-1 cursor-default transition-colors ${
                             task.completed
-                              ? "bg-white/5 border-white/10 text-gray-500"
+                              ? "bg-emerald-400/15 border-emerald-400/10 text-emerald-300"
                               : "bg-orange-600/15 border-orange-600/40 text-orange-300 hover:bg-orange-600/25"
                           }`}
                           style={{

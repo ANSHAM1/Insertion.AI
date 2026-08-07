@@ -342,6 +342,7 @@ export function AppProvider({ children }) {
 
         testCaseResults,
         runningCode,
+        setTestCaseResults,
         runCode,
 
         metadata,

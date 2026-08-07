@@ -1,9 +1,9 @@
 from collections import defaultdict
 from datetime import date, datetime
+from typing import Any
 
 from src.fetcher.github.models import (Metadata, Question)
 from src.fetcher.github.storage import GithubStorage
-
 
 class GithubRepository:
 
@@ -81,23 +81,91 @@ class GithubRepository:
         return fetched_questions
 
 
-    def fetch_all_questions(self) -> list[tuple[date, list[Question]]]:
+    def fetch_all_questions(self) -> list[tuple[date, list[dict[str, Any]]]]:
 
-        grouped: dict[date, list[Question]] = defaultdict(list)
+        grouped: dict[date, list[dict[str, Any]]] = defaultdict(list)
 
-        for file in self.storage.list_all_files():
+        files = self.storage.list_all_files()
+
+        for file in files:
+
             if not file.path.endswith("question.json"):
                 continue
 
             parts = file.path.split("/")
 
-            generated_date = date(year=int(parts[1]), month=int(parts[2]), day=int(parts[3]))
+            # coding/year/month/day/question_id/question.json
+            generated_date = date(
+                year=int(parts[1]),
+                month=int(parts[2]),
+                day=int(parts[3]),
+            )
 
-            question = Question.model_validate_json(self.storage.read_text(file.path))
+            question_path = "/".join(parts[:-1])
+            question_id = parts[4]
 
-            grouped[generated_date].append(question)
+            question = Question.model_validate_json(
+                self.storage.read_text(file.path)
+            )
 
-        return sorted(grouped.items(), key=lambda x: x[0], reverse=True)
+            solutions : list[dict[str, Any]] = []
+
+            solution_dirs : set[str] = set()
+
+            prefix = question_path + "/"
+
+            for solution_file in files:
+                if not solution_file.path.startswith(prefix):
+                    continue
+
+                remaining = solution_file.path[len(prefix):]
+
+                parts_left = remaining.split("/")
+
+                # solution_name/metadata.json
+                if (len(parts_left) == 3 and parts_left[0] == "solutions" and parts_left[2] == "metadata.json"):
+                    solution_dirs.add(
+                        f"{question_path}/solutions/{parts_left[1]}"
+                    )
+
+            for solution_path in solution_dirs:
+                solutions.append(
+                    {
+                        "name": solution_path.split("/")[-1],
+                        "metadata": self.fetch_metadata(solution_path).model_dump(mode="json"),
+                    }
+                )
+
+            grouped[generated_date].append(
+                {
+                    **question.model_dump(mode="json"),
+                    "question_id": question_id,
+                    "solutions": solutions,
+                }
+            )
+
+        return sorted(
+            grouped.items(),
+            key=lambda x: x[0],
+            reverse=True,
+        )
+    # def fetch_all_questions(self) -> list[tuple[date, list[Question]]]:
+
+    #     grouped: dict[date, list[Question]] = defaultdict(list)
+
+    #     for file in self.storage.list_all_files():
+    #         if not file.path.endswith("question.json"):
+    #             continue
+
+    #         parts = file.path.split("/")
+
+    #         generated_date = date(year=int(parts[1]), month=int(parts[2]), day=int(parts[3]))
+
+    #         question = Question.model_validate_json(self.storage.read_text(file.path))
+
+    #         grouped[generated_date].append(question)
+
+    #     return sorted(grouped.items(), key=lambda x: x[0], reverse=True)
         
 
     # Question
