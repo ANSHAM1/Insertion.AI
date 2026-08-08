@@ -18,20 +18,20 @@ class Job(Base):
     id                       : Mapped[str]          = mapped_column(String(128), primary_key=True)
 
     company                  : Mapped[str]          = mapped_column(String(200), index=True)
-    role                     : Mapped[str]          = mapped_column(String(200), index=True)
+    role                     : Mapped[str]          = mapped_column(String(300), index=True)
     description              : Mapped[str | None]   = mapped_column(Text, nullable=True)
     requirements_summary     : Mapped[str | None]   = mapped_column(Text, nullable=True)
 
     job_type                 : Mapped[str]          = mapped_column(String(100), index=True)
 
     location                 : Mapped[str | None]   = mapped_column(String(150), nullable=True)
-    location_type            : Mapped[str | None]   = mapped_column(String(50), nullable=True)
+    location_type            : Mapped[str | None]   = mapped_column(String(100), nullable=True)
 
-    experience_level         : Mapped[str | None]   = mapped_column(String(50), nullable=True)
+    experience_level         : Mapped[str | None]   = mapped_column(String(200), nullable=True)
     experience_min           : Mapped[int | None]   = mapped_column(nullable=True)
     experience_max           : Mapped[int | None]   = mapped_column(nullable=True)
 
-    education_level          : Mapped[str | None]   = mapped_column(String(100), nullable=True)
+    education_level          : Mapped[str | None]   = mapped_column(String(200), nullable=True)
 
     skills                   : Mapped[list[str]]    = mapped_column(JSON, default=list, nullable=False)
     technologies             : Mapped[list[str]]    = mapped_column(JSON, default=list, nullable=False)

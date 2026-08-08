@@ -6,11 +6,13 @@ export function heatColor(count) {
   return "bg-orange-500";
 }
 
-// Builds 3 independent, correctly-bounded calendar grids: the current
-// month plus the 2 previous months (matches the "curr + 2 prev" data the
-// backend sends). Each month grid is padded to a fixed 6 weeks so the
-// three heatmaps line up evenly regardless of how many weeks a given
-// month actually spans.
+function toLocalISODate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function buildLast3MonthsHeatmap(dailyData) {
   const lookup = new Map((dailyData ?? []).map((d) => [d.date, d.attempts]));
   const today = new Date();
@@ -40,7 +42,7 @@ export function buildLast3MonthsHeatmap(dailyData) {
     while (cursor <= gridEnd) {
       const week = [];
       for (let i = 0; i < 7; i++) {
-        const key = cursor.toISOString().slice(0, 10);
+        const key = toLocalISODate(cursor);
         const inMonth = cursor.getMonth() === month;
         week.push({ date: key, count: lookup.get(key) ?? 0, inMonth });
         cursor.setDate(cursor.getDate() + 1);
@@ -48,8 +50,6 @@ export function buildLast3MonthsHeatmap(dailyData) {
       weeks.push(week);
     }
 
-    // Pad to a fixed 6 weeks so every month block has the same width,
-    // keeping the three heatmaps aligned regardless of week count.
     let padIndex = 0;
     while (weeks.length < 6) {
       weeks.push(

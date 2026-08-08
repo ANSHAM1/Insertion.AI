@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Timer, Play } from "lucide-react";
-import { SectionCard } from "../UI";
-import Pagination from "./Pagination";
+import Pagination from "../Pagination";
 import { difficultyStyle } from "../../utils/difficulty";
 import { formatTimeLimit } from "../../utils/format";
 import { PAGE_SIZE } from "../../constants/constants";
 
-// `resetKey` — bump this from the parent (e.g. on every "Generate" click)
-// to jump the list back to page 1, mirroring the original behaviour.
-export default function ProblemsList({ questions, loading, onSelect, resetKey }) {
+export default function ProblemsList({
+  questions,
+  loading,
+  onSelect,
+  resetKey,
+}) {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -23,8 +25,20 @@ export default function ProblemsList({ questions, loading, onSelect, resetKey })
   );
 
   return (
-    <SectionCard title="Problems" className="lg:col-span-2">
-      <div className="h-[1040px] overflow-y-auto space-y-2 pr-1">
+    <div className="card lg:col-span-2 rounded-xl overflow-hidden flex flex-col h-[1040px]">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#232326] shrink-0">
+        <h3 className="text-sm font-semibold text-white">Problems</h3>
+
+        {totalPages > 1 && (
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 pr-2 space-y-2">
         {loading && questions.length === 0 && (
           <p className="text-sm text-gray-500 px-1 py-6 text-center">
             Loading problems...
@@ -35,14 +49,6 @@ export default function ProblemsList({ questions, loading, onSelect, resetKey })
           <p className="text-sm text-gray-500 px-1 py-6 text-center">
             No problems yet. Check back soon.
           </p>
-        )}
-
-        {questions.length > PAGE_SIZE && (
-          <Pagination
-            page={safePage}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
         )}
 
         {pageQuestions.map((q) => {
@@ -94,6 +100,6 @@ export default function ProblemsList({ questions, loading, onSelect, resetKey })
           );
         })}
       </div>
-    </SectionCard>
+    </div>
   );
 }

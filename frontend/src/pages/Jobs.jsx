@@ -14,6 +14,7 @@ import {
   Building2,
 } from "lucide-react";
 import { SectionCard } from "../components/UI";
+import Pagination from "../components/Pagination";
 
 import DOMPurify from "dompurify";
 
@@ -97,6 +98,11 @@ const SORT_OPTIONS = [
   { key: "comp_desc", label: "Compensation: High to Low" },
   { key: "prestige_desc", label: "Prestige: High to Low" },
 ];
+
+// Kept local to this page, mirroring how PAGE_SIZE is scoped to the
+// coding page's constants — jobs and coding problems paginate
+// independently of each other.
+const JOBS_PAGE_SIZE = 10;
 
 function initials(name) {
   if (!name) return "??";
@@ -531,6 +537,7 @@ export default function Jobs() {
   const [showSort, setShowSort] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [page, setPage] = useState(1);
 
   const handleDelete = async (jobId) => {
     setDeletingIds((prev) => new Set(prev).add(jobId));
@@ -625,6 +632,26 @@ export default function Jobs() {
 
     return list;
   }, [localJobs, query, statusFilter, sortKey]);
+
+  // Jump back to page 1 whenever the search/filter/sort criteria change,
+  // so the pager never gets stuck showing a now out-of-range page.
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter, sortKey]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(visibleJobs.length / JOBS_PAGE_SIZE),
+  );
+  const safePage = Math.min(page, totalPages);
+  const pageJobs = useMemo(
+    () =>
+      visibleJobs.slice(
+        (safePage - 1) * JOBS_PAGE_SIZE,
+        safePage * JOBS_PAGE_SIZE,
+      ),
+    [visibleJobs, safePage],
+  );
 
   const stats = useMemo(() => {
     const list = localJobs;
@@ -781,7 +808,7 @@ export default function Jobs() {
                 No jobs match your search.
               </p>
             ) : (
-              visibleJobs.map((j) => (
+              pageJobs.map((j) => (
                 <JobCard
                   key={j.id}
                   job={j}
@@ -792,6 +819,16 @@ export default function Jobs() {
               ))
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center pt-1">
+              <Pagination
+                page={safePage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-5">
@@ -819,7 +856,7 @@ export default function Jobs() {
             </div>
           </div>
 
-          <SectionCard title="Application Status">
+          <SectionCard title="Application Tunnel">
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-2 border-b border-[#232326]">
                 <span className="text-sm text-gray-400">Total Jobs</span>
@@ -832,35 +869,46 @@ export default function Jobs() {
                 {
                   label: "Applied",
                   value: stats.applied,
+                  total: stats.total,
                   color: STATUS_CONFIG.APPLIED.bar,
                 },
-                { label: "OA", value: stats.oa, color: STATUS_CONFIG.OA.bar },
+                {
+                  label: "OA",
+                  value: stats.oa,
+                  total: stats.applied,
+                  color: STATUS_CONFIG.OA.bar,
+                },
                 {
                   label: "Interview",
                   value: stats.interview,
+                  total: stats.oa,
                   color: STATUS_CONFIG.INTERVIEW.bar,
                 },
                 {
                   label: "HR Round",
                   value: stats.hr,
+                  total: stats.interview,
                   color: STATUS_CONFIG.HR.bar,
                 },
                 {
                   label: "Offer",
                   value: stats.offers,
+                  total: stats.hr,
                   color: STATUS_CONFIG.OFFER.bar,
                 },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="flex justify-between text-xs text-gray-400 mb-1">
                     <span>{item.label}</span>
-                    <span>{item.value}</span>
+                    <span>
+                      {item.value}/{item.total}
+                    </span>
                   </div>
                   <div className="w-full h-1.5 bg-[#232326] rounded-full overflow-hidden">
                     <div
                       className={`h-full ${item.color}`}
                       style={{
-                        width: `${stats.total ? (item.value / stats.total) * 100 : 0}%`,
+                        width: `${item.total ? (item.value / item.total) * 100 : 0}%`,
                       }}
                     />
                   </div>

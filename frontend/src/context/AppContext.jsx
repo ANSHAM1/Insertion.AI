@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 
 import { generatePlanner, completeTask, saveReflection } from "../apis/planner";
 
@@ -284,27 +284,29 @@ export function AppProvider({ children }) {
 
   // ---------------------------------------------------------------------
 
-  async function refreshAll() {
-    if (syncing) return;
+  const syncingRef = useRef(false);
 
+  async function refreshAll() {
+    if (syncingRef.current) return;
+
+    syncingRef.current = true;
     setSyncing(true);
 
-    await Promise.all([
-      refreshPlanner(),
-      refreshJobs(),
-      refreshArticles(),
-      refreshCodingQuestions(),
-    ]);
+    try {
+      await Promise.all([
+        refreshPlanner(),
+        refreshJobs(),
+        refreshCodingQuestions(),
+      ]);
 
-    await refreshDashboard();
+      await Promise.all([refreshDashboard(), refreshArticles()]);
 
-    setLastSync(new Date());
-    setSyncing(false);
+      setLastSync(new Date());
+    } finally {
+      syncingRef.current = false;
+      setSyncing(false);
+    }
   }
-
-  useEffect(() => {
-    refreshAll();
-  }, []);
 
   useEffect(() => {
     refreshAll();
