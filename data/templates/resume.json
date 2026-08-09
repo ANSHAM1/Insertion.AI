@@ -1,0 +1,128 @@
+{
+  "resumes": [
+    {
+      "resume_name": "AI Engineer",
+      "role": "AI Engineer / Applied AI Engineer",
+      "skills": [
+        "Python",
+        "C++",
+        "PyTorch",
+        "CUDA",
+        "Keras",
+        "NumPy",
+        "Pandas",
+        "Machine Learning",
+        "Deep Learning",
+        "LangChain",
+        "LangGraph",
+        "Agentic AI",
+        "RAG",
+        "LLM Tool Calling",
+        "Multi-Agent Systems",
+        "Model Deployment",
+        "Inference",
+        "GPU Programming"
+      ],
+      "projects": [
+        "MODELISE",
+        "TorchLessCUDA",
+        "InsertionAI",
+        "SentinelAI"
+      ]
+    },
+    {
+      "resume_name": "Backend Engineer",
+      "role": "Backend Engineer / Software Engineer / Python Developer",
+      "skills": [
+        "Python",
+        "C++",
+        "Rust",
+        "SQL",
+        "FastAPI",
+        "REST API",
+        "gRPC",
+        "Microservices",
+        "Async Programming",
+        "Backend Architecture",
+        "API Design",
+        "Dependency Injection",
+        "Authentication",
+        "Middleware",
+        "WebSockets",
+        "PostgreSQL",
+        "SQL Server",
+        "Docker",
+        "Docker Compose",
+        "Git",
+        "GitHub Actions",
+        "CI/CD"
+      ],
+      "projects": [
+        "MODELISE",
+        "InsertionAI",
+        "SentinelAI"
+      ]
+    },
+    {
+      "resume_name": "Systems Engineer",
+      "role": "Systems Engineer / Platform Engineer",
+      "skills": [
+        "C++",
+        "C++20",
+        "Rust",
+        "CUDA",
+        "Python",
+        "Linux",
+        "Concurrency",
+        "Distributed Systems",
+        "System Design",
+        "Software Architecture",
+        "High Performance Computing",
+        "Performance Optimization",
+        "GPU Programming",
+        "Memory-oriented Programming",
+        "Modular Design",
+        "Docker",
+        "Kubernetes",
+        "Git",
+        "CI/CD"
+      ],
+      "projects": [
+        "TorchLessCUDA",
+        "SentinelAI",
+        "MODELISE",
+        "InsertionAI"
+      ]
+    },
+    {
+      "resume_name": "Agentic AI Engineer",
+      "role": "Agentic AI Developer / LLM Engineer / AI Engineer",
+      "skills": [
+        "Python",
+        "LangChain",
+        "LangGraph",
+        "Agentic AI",
+        "AI Agents",
+        "Multi-Agent Systems",
+        "RAG",
+        "LLM Tool Calling",
+        "LLM Orchestration",
+        "Structured Output",
+        "Context Engineering",
+        "Prompt Engineering",
+        "Vector Databases",
+        "FastAPI",
+        "gRPC",
+        "SQL Server",
+        "Docker",
+        "Git",
+        "GitHub Actions"
+      ],
+      "projects": [
+        "InsertionAI",
+        "MODELISE",
+        "TorchLessCUDA"
+      ]
+    }
+  ]
+}

@@ -11,8 +11,7 @@ wheels/
 
 # environment variables
 .env
-secrets/
-data/
+
 
 
 
