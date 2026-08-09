@@ -13,7 +13,7 @@ The system combines intelligent planning, job discovery, campus placement tracki
 ### Project Work-Flow
 
 <p align="center">
-  <img src="diagrams/work_flow.png" width="95%">
+  <img src="diagrams/flow_diagram.png" width="95%">
 </p>
 
 #
