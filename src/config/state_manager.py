@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import json
 from typing import Any
 
@@ -9,11 +10,16 @@ class StateManager:
     def __init__(self) -> None:
         self.SYNC_PATH = get_settings().SYNC_DATA_PATH
 
+        self.TIMEZONE = ZoneInfo(get_settings().ZONE_INFO)
+
     # -----------------------------------------------------------------------------------
 
     @staticmethod
     def now() -> datetime:
         return datetime.now(timezone.utc)
+
+    def local_now(self) -> datetime:
+        return self.now().astimezone(self.TIMEZONE)
 
     @staticmethod
     def time_delta(hours: int) -> timedelta:

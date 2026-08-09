@@ -3,6 +3,8 @@ from typing import Any
 from src.fetcher.hirebase.model import (CompanyModel, ExperienceRange, JobModel)
 from src.fetcher.hirebase.hirebase_api import HirebaseService
 
+from src.config.settings import get_settings
+import json
 
 def job_parser(jobs: list[dict[str, Any]]) -> list[JobModel]:
     results: list[JobModel] = []
@@ -56,33 +58,17 @@ def job_parser(jobs: list[dict[str, Any]]) -> list[JobModel]:
     return results
 
 
-JOB_TITLES = [
-    "Software Engineer",
-    "Software Developer",
-    "Backend Engineer",
-    "Backend Developer",
-    "Python Developer",
-    "AI Engineer",
-    "Agentic AI"
-    "Deep Learning Engineer",
-    "Data Engineer",
-    "Systems Engineer",
-    "C++ Developer",
-    "Graduate Software Engineer",
-    "Associate Software Engineer",
-    "SDE 1",
-    "Applied AI Engineer",
-    "Data Scientist",
-]
-
-
-def fetch_jobs(limit : int = 20) -> list[JobModel]:
+def fetch_jobs(limit: int = 20) -> list[JobModel]:
     service = HirebaseService()
 
     try:
+        with open(get_settings().JOB_SEARCH_PATH, "r", encoding="utf-8") as file:
+            config = json.load(file)
+
         jobs = service.search_jobs(
-            job_titles=JOB_TITLES,
+            job_titles=config["job_titles"],
             keywords=None,
+            locations=config["locations"],
             limit=limit,
         )
 

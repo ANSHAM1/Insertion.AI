@@ -258,7 +258,7 @@ export function AppProvider({ children }) {
     }
   }
 
-  async function runCode(questionSummary, solution, testcases) {
+  async function runCode(questionSummary, solution, testcases, language) {
     setRunningCode(true);
     setTestCaseResults(null);
 
@@ -267,6 +267,7 @@ export function AppProvider({ children }) {
         questionSummary,
         solution,
         testcases,
+        language
       );
 
       setTestCaseResults(data);
@@ -293,13 +294,13 @@ export function AppProvider({ children }) {
     setSyncing(true);
 
     try {
-      await Promise.all([
+      await Promise.allSettled([
         refreshPlanner(),
         refreshJobs(),
         refreshCodingQuestions(),
       ]);
 
-      await Promise.all([refreshDashboard(), refreshArticles()]);
+      await Promise.allSettled([refreshDashboard(), refreshArticles()]);
 
       setLastSync(new Date());
     } finally {

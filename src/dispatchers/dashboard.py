@@ -442,12 +442,14 @@ class DashboardDispatch:
 
 
 
+from src.config.settings import get_settings
 
 def dashboard(command: str, _: dict[Any, Any]) -> dict[str, Any]:
     dd = DashboardDispatch()
 
     try:
         return {
+            "user_name": get_settings().USER_NAME,
             "last_thirty_days_progress": dd.last_thirty_days_progress(),
             "schedule_streaks": dd.schedule_streaks(),
             "reading_overview": dd.reading_overview(),

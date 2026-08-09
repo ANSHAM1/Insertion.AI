@@ -11,6 +11,7 @@ from src.ai.llm_factory import FailoverLLM
 
 from src.validators.Hirebase_output import JobModelOutput
 
+from src.config.settings import get_settings
 
 
 def search_jobs_node(state: JobState) -> dict[str, Any]:
@@ -22,7 +23,7 @@ def search_jobs_node(state: JobState) -> dict[str, Any]:
             "terminate" : True
         }
 
-    jobs = fetch_jobs(limit=20)
+    jobs = fetch_jobs(limit=get_settings().DAILY_JON_SEARCH_LIMIT)
 
     if not jobs:
         return {
@@ -56,8 +57,8 @@ def build_prompt_node(state: JobState) -> dict[str, Any]:
 
     prompt = job_prompt.invoke(
         {
-            "candidate_profile" : state["resume"],
-            "jobs"              : state["jobs"]
+            "resumes" : state["resume"],
+            "jobs"    : state["jobs"]
         }
     )
 

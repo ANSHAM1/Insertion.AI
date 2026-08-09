@@ -150,6 +150,19 @@ class DailyScheduleRepository(Repository):
         return self.db.scalar(
             select(DailySchedule).options(selectinload(DailySchedule.items)).where(DailySchedule.schedule_date == date))
 
+    def get_schedule_range(self, start_date: date, end_date: date) -> list[DailySchedule]:
+        return list(
+            self.db.scalars(
+                select(DailySchedule)
+                .options(selectinload(DailySchedule.items))
+                .where(
+                    DailySchedule.schedule_date >= start_date,
+                    DailySchedule.schedule_date <= end_date,
+                )
+                .order_by(DailySchedule.schedule_date)
+            ).all()
+        )
+
     def find_duplicate(self, date: date) -> DailySchedule | None:
         return self.db.scalar(
             select(DailySchedule).where(

@@ -44,8 +44,6 @@ export default function CodeEditor() {
     runCode,
   } = useApp();
 
-  console.log(codingQuestions);
-
   const [languageId, setLanguageId] = useState(LANGUAGES[0].id);
   const [code, setCode] = useState("");
 
@@ -160,8 +158,8 @@ export default function CodeEditor() {
   const lastResultIsCurrent = metadata?.question_id === question?.question_id;
 
   const handleRun = useCallback(async () => {
-    await runCode(question.summary, code, testcases);
-  }, [runCode, question, code, testcases]);
+    await runCode(question.summary, code, testcases, LANGUAGE_MAP[languageId]);
+  }, [runCode, question, code, testcases, languageId]);
 
   const handleSubmit = useCallback(async () => {
     setShowSubmitModal(true);

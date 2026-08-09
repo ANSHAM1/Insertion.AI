@@ -44,11 +44,9 @@ class Question(BaseModel):
 
     examples       : list[Example]
 
-    testcases      : list[TestCase] 
+    testcases      : list[TestCase]  = Field(min_length=3, max_length=4)
 
     topics         : list[str]
-
-    io_template    : dict[str, str]
 
     time_limit     : int = Field(gt=0)
 

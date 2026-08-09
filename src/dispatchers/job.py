@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from typing import Any
+import json
 
 from src.database.enums import JobStatus
 from src.database.repository import JobRepository
@@ -59,11 +60,14 @@ class JobDispatch(InsertionAIDispatch):
 
         repo = JobRepository(self.db)
 
+        with open(self.settings.RESUME_PATH, "r", encoding="utf-8") as file:
+            resume = json.load(file)
+
         state: dict[str, Any] = {
             "curr_date": date.today(),
             "timestamp": datetime.now(),
 
-            "resume": {},
+            "resume": resume,
 
             "app_state": self.app_state,
 

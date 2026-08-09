@@ -45,13 +45,15 @@ export async function testCaseResultCodeRun(
   question_summary,
   solution,
   testcases,
+  language
 ) {
   const result = await invoke("run_python", {
     command: "code_runner",
     payload: {
       question_summary,
       solution,
-      testcases
+      testcases,
+      language
     },
   });
 

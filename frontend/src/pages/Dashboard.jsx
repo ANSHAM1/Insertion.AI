@@ -103,7 +103,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Good Morning, {"Ansham Maurya".split(" ")[0]}!
+            Good Morning, {dashboardData?.user_name ?? "User"}!
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             Here's what's happening with your productivity today.

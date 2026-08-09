@@ -75,7 +75,8 @@ def generate_question_id() -> str:
 def llm_inference_node(state : GeneratorState) -> dict[str, Any]:
 
     try:
-         response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=QuestionsOutput, temperature=0)
+        response = FailoverLLM.get_structured_output_openai_gpt_4_1(state["prompt"], schema=QuestionsOutput, temperature=0.5)
+
     except Exception:
         import traceback
         traceback.print_exc()

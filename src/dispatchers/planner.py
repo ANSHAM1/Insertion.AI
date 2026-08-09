@@ -1,5 +1,5 @@
 import json
-from datetime import date, timedelta
+from datetime import date, time
 from typing import Any
 
 from src.database.repository import DailyScheduleRepository, RssRepository
@@ -37,6 +37,21 @@ class PlannerDispatch(InsertionAIDispatch):
             ]
         }
 
+    def get_today_free_window(self, curr_date: date, current_time: time, weekly_free_time: dict[str, dict[str, str]]) -> tuple[time, time]:
+
+        day = curr_date.strftime("%A").lower()
+
+        window = weekly_free_time[day]
+
+        configured_start = time.fromisoformat(window["start_time"])
+        configured_end = time.fromisoformat(window["end_time"])
+
+        start_time = max(current_time, configured_start)
+        end_time = (time(23, 59, 59) if configured_end == time(0, 0) else configured_end)
+
+        return start_time, end_time
+
+
     def invoke(self):
 
         schedule_repo = DailyScheduleRepository(self.db)
@@ -44,36 +59,53 @@ class PlannerDispatch(InsertionAIDispatch):
         with open(self.settings.SCHEDULE_PATH, "r", encoding="utf-8") as file:
             template = json.load(file)
 
+        planner_template = {
+            "goal": template["goal"],
+            "topics": template["topics"],
+            "daily_practice_already_established": (
+                template["daily_practice_already_established"]
+            ),
+        }
+
+        now = self.app_state.local_now()
+        curr_date = now.date()
+
+        start_time, end_time = self.get_today_free_window(
+            curr_date=curr_date,
+            current_time=now.time().replace(microsecond=0),
+            weekly_free_time=template["weekly_free_time"],
+        )
+
+
         state : dict[str, Any] = {
-            "curr_date"      : date.today(),
-            "already_synced" : False,
-            "template"       : template,
+            "curr_date"      : curr_date,
+
+            "start_time"     : start_time,
+            "end_time"       : end_time,
+
             "app_state"      : self.app_state,
-            "events"         : [],
-            "prev_schedule"  : None,
-            "curr_schedule"  : None,
+
+            "already_synced" : False,
+
             "rss_repo"       : RssRepository(self.db),
             "schedule_repo"  : schedule_repo,
-            "prompt"         : "",
+
+            "prev_schedules" : {},
+
+            "curr_schedule"  : None,
+
+            "template"       : planner_template,
+
+            "prompt"         : None,
+
             "llm_failed"     : False,
         }
 
         planner_graph.invoke(state) # type: ignore
 
-        today = date.today()
-        monday = today - timedelta(days=today.weekday())
+        today_schedule = schedule_repo.get_schedule(curr_date)
 
-        schedules = [
-            schedule_repo.get_schedule(day)
-            for day in (
-                monday + timedelta(days=i)
-                for i in range((today - monday).days + 1)
-            )
-        ]
-
-        return self._helper(
-            [s for s in schedules if s is not None]
-        )
+        return self._helper([today_schedule] if today_schedule else [])
 
 
     def update_item(self, task_id : int, completed: bool):

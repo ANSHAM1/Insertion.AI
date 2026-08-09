@@ -78,3 +78,37 @@ class FailoverLLM:
                 continue
 
         return None
+
+
+    @staticmethod
+    def get_structured_output_openai_5_6_lune(input: Any, *, schema: Any, temperature: float = 1.0, **kwargs: Any) -> Any:
+
+        llm = ChatOpenAI(model="gpt-5.6-luna", api_key=get_settings().OPENAI_API_KEY, temperature=temperature)
+
+        try:
+            return llm.with_structured_output(schema=schema, method="json_schema", strict=True).invoke(input, **kwargs) # type: ignore
+
+        except Exception as e:
+            print("========== LLM FAILED ==========")
+            print(type(e).__name__)
+            print(str(e))
+            import traceback
+            traceback.print_exc()
+            raise
+
+
+    @staticmethod
+    def get_structured_output_openai_gpt_4_1(input: Any, *, schema: Any, temperature: float = 1.0, **kwargs: Any) -> Any:
+
+        llm = ChatOpenAI(model="gpt-4.1", api_key=get_settings().OPENAI_API_KEY, temperature=temperature)
+
+        try:
+            return llm.with_structured_output(schema=schema, method="json_schema", strict=True).invoke(input, **kwargs) # type: ignore
+
+        except Exception as e:
+            print("========== LLM FAILED ==========")
+            print(type(e).__name__)
+            print(str(e))
+            import traceback
+            traceback.print_exc()
+            raise

@@ -32,7 +32,7 @@ def prompt_builder_node(state: EvaluatorState) -> dict[str, Any]:
 
 def llm_inference_node(state: EvaluatorState) -> dict[str, Any]:
 
-    response = FailoverLLM.get_structured_output_from_llm(state["prompt"], schema=AIMetadataOutput, temperature=0)
+    response = FailoverLLM.get_structured_output_openai_gpt_4_1(state["prompt"], schema=AIMetadataOutput, temperature=0.2)
 
     if response is None:
         return {

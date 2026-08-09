@@ -149,24 +149,6 @@ class GithubRepository:
             key=lambda x: x[0],
             reverse=True,
         )
-    # def fetch_all_questions(self) -> list[tuple[date, list[Question]]]:
-
-    #     grouped: dict[date, list[Question]] = defaultdict(list)
-
-    #     for file in self.storage.list_all_files():
-    #         if not file.path.endswith("question.json"):
-    #             continue
-
-    #         parts = file.path.split("/")
-
-    #         generated_date = date(year=int(parts[1]), month=int(parts[2]), day=int(parts[3]))
-
-    #         question = Question.model_validate_json(self.storage.read_text(file.path))
-
-    #         grouped[generated_date].append(question)
-
-    #     return sorted(grouped.items(), key=lambda x: x[0], reverse=True)
-        
 
     # Question
     # ------------------------------------------------------------------

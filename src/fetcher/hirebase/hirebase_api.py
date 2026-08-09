@@ -24,7 +24,7 @@ class HirebaseService:
         )
 
 
-    def search_jobs(self, *, job_titles: list[str], keywords: list[str] | None = None, limit: int, 
+    def search_jobs(self, *, job_titles: list[str], keywords: list[str] | None = None, locations: list[dict[str, str]] | None = None, limit: int, 
                     page: int = 1, days_ago: int = 1) -> list[dict[str, Any]]:
 
             payload: dict[str, Any] = {
@@ -38,6 +38,9 @@ class HirebaseService:
 
             if keywords:
                 payload["keywords"] = keywords
+
+            if locations:
+                payload["geo_locations"] = locations
 
             response = self.client.post(
                 "/jobs/search",

@@ -1,132 +1,46 @@
 from langchain_core.prompts import ChatPromptTemplate
 
+
 code_generator_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
             """
-You are an experienced competitive programming problem setter.
+You are an expert competitive-programming problem setter.
 
-Generate exactly 4 original LeetCode-style coding questions.
+Generate original, self-contained, interview-quality coding problems based
+on the user's request. Follow the structured output schema exactly.
 
-## Objective
+Requirements:
+- Match the requested difficulty and topics.
+- Make multiple problems meaningfully different.
+- Avoid trivial variations or copied famous problems.
+- Write precise, unambiguous problem statements.
+- Make examples and testcases correct.
+- Use `old_questions_summary` to avoid semantic duplicates.
+- `summary` describes the observable task, not the algorithm.
+- `topics` describes relevant concepts.
+- Set a realistic `time_limit`.
 
-Create questions that improve problem-solving ability through exposure to different patterns, edge cases and implementations.
+Most importantly, validate constraints before returning the problem:
+determine the intended efficient solution and its worst-case time/space
+complexity, then choose constraints that this solution can actually handle.
+Never give large constraints to an exponential, factorial, NP-hard, or
+otherwise impractical general problem. Ensure the statement, constraints,
+examples, testcases, and intended complexity are mutually consistent.
 
-The goal is NOT to invent completely new algorithms. Reusing well-known algorithms and data structures is acceptable, but the problem statement, constraints, examples and formulation should feel original.
-
-Avoid generating questions that are semantically similar to the provided signature summaries.
-
----
-
-## Requirements
-
-- Generate exactly 4 questions.
-- Every question must be self-contained.
-- Do not mention LeetCode or any existing platform.
-- Do not copy existing famous problems.
-- Avoid trivial variations obtained only by changing the story or variable names.
-- Questions should range from Easy to Hard depending on the user prompt.
-- Each question should have a unique problem statement and signature summary.
-
----
-
-## Signature Summary
-
-The signature summary is a single concise sentence describing the observable behaviour of the problem.
-
-It is NOT:
-
-- the algorithm
-- the data structure
-- the implementation
-- the optimization
-
-Examples of good summaries:
-
-✓ Merge consecutive ranges having overlapping intervals.
-
-✓ Count the minimum operations required to transform one string into another.
-
-✓ Simulate movement of robots on a circular track.
-
-Examples of bad summaries:
-
-✗ Binary Search
-
-✗ Dynamic Programming
-
-✗ Union Find
-
-✗ Sliding Window
-
-The summary is used only for duplicate detection.
-
----
-
-## IO Template
-
-The field `io_template` contains starter code for each supported programming language.
-
-Generate templates for:
-
-- C++
-- Python
-- Java
-
-Each template should:
-
-- contain the function signature
-- include necessary imports when appropriate
-- include comments explaining input/output
-- NOT contain the solution
-- NOT contain TODOs beyond implementing the function body
-
----
-
-## Constraints
-
-Generate realistic:
-
-- constraints
-- examples
-- public testcases
-- hidden testcases
-- time limits
-
-Public testcases should validate common behaviour.
-
-Hidden testcases should cover:
-
-- edge cases
-- large inputs
-- boundary values
-- tricky scenarios
-
----
-
-## Quality
-
-Problems should feel interview-ready and production quality.
-
-Avoid ambiguity.
-
-Ensure every example is consistent with the problem statement and constraints.
-            """,
+Return only the structured output.
+"""
         ),
         (
             "human",
             """
-## User Prompt
-
+USER REQUEST:
 {user_prompt}
 
----
-
-## Previously Generated Signature Summaries
-
+PREVIOUS QUESTION SUMMARIES:
 {old_questions_summary}
-            """,
+"""
         ),
     ]
 )
