@@ -1,12 +1,12 @@
 ## Insertion.AI
 
 #### AI-Powered Career Operating System
-#### Planner • Job Discovery • Campus Recruitment • Coding Practice • Analytics
+#### Planner • Job Discovery • Coding Practice • Analytics
 #
 
 Insertion.AI is a modular multi-agent platform that automates career management through specialized AI agents.
 
-The system combines intelligent planning, job discovery, campus placement tracking, coding practice, and long-term analytics into a single workspace.
+The system combines intelligent planning, job discovery, coding practice, and long-term analytics into a single workspace.
 
 #
 
