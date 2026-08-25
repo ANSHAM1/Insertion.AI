@@ -1,4 +1,4 @@
-from src.config.settings import get_settings
+from config.config import get_settings
 
 
 def get_github_headers() -> dict[str, str]:

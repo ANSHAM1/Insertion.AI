@@ -2,7 +2,7 @@ from typing import Any
 
 import httpx
 
-from src.config.settings import get_settings
+from config.config import get_settings
 from src.fetcher.github.auth import get_github_headers
 
 class GithubClient:

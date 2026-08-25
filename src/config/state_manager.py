@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 import json
 from typing import Any
 
-from src.config.settings import get_settings
+from config.config import get_settings
 
 
 class StateManager:

@@ -442,7 +442,7 @@ class DashboardDispatch:
 
 
 
-from src.config.settings import get_settings
+from config.config import get_settings
 
 def dashboard(command: str, _: dict[Any, Any]) -> dict[str, Any]:
     dd = DashboardDispatch()
