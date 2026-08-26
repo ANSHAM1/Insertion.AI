@@ -1,36 +1,48 @@
 services:
 
-  backend:
+  Gateway:
+    build:
+      content: .
+      dockerfile: gateway/Dockerfile
+
+      ports: 
+        - "8000:8000"
+
+      depends_on:
+        postgres:
+          condition: service_healthy
+        redis:
+          condition: service_started
+
+      env_file:
+        - gateway/.env
+
+      network: 
+        - insertion-remote
+
+
+  Initializer:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/initializer/Dockerfile
 
     ports:
-      - "8000:8000"
+      - "8002:8002"
 
     env_file:
-      - .env
-
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
-    volumes:
-      - ./app:/app/app
+      - apps/initializer/.env
 
     networks:
-      - experimentos-network
+      - insertion-remote
 
 
   postgres:
     image: postgres:17
 
     environment:
-      POSTGRES_DB: experimentos
-      POSTGRES_USER: experimentos
-      POSTGRES_PASSWORD: experimentos
+      POSTGRES_DB: insertion
+      POSTGRES_USER: insertion
+      POSTGRES_PASSWORD: insertion
 
     ports:
       - "5432:5432"
@@ -49,7 +61,7 @@ services:
       retries: 5
 
     networks:
-      - experimentos-network
+      - insertion-remote
 
 
   redis:
@@ -59,7 +71,7 @@ services:
       - "6379:6379"
 
     networks:
-      - experimentos-network
+      - insertion-remote
 
 
 
@@ -68,5 +80,5 @@ volumes:
 
 
 networks:
-  experimentos-network:
+  insertion-remote:
     driver: bridge
