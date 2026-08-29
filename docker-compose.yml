@@ -5,6 +5,8 @@ services:
       content: .
       dockerfile: gateway/Dockerfile
 
+      container_name: Gateway
+
       ports: 
         - "8000:8000"
 
@@ -26,6 +28,8 @@ services:
       context: .
       dockerfile: llm/Dockerfile
 
+      container_name: llm
+
       env_file:
         - llm/.env
 
@@ -33,10 +37,85 @@ services:
         - insertion-remote
 
 
+  Temporal:
+    image: temporalio/auto-setup:latest
+
+    container_name: temporal
+
+    depends_on:
+      - temporal-postgres
+
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: Temporal
+      POSTGRES_PWD: Temporal
+      POSTGRES_SEEDS: TemporalPostgres
+
+    ports:
+      - "7233:7233"
+
+    networks:
+      - insertion-remote
+
+
+  # Temporal's own persistence DB
+  TemporalPostgres:
+    image: postgres:17
+
+    container_name: temporal-postgres
+
+    environment:
+      POSTGRES_USER: Temporal
+      POSTGRES_PASSWORD: Temporal
+      POSTGRES_DB: Temporal
+
+    volumes:
+      - temporal_postgres_data:/var/lib/postgresql/data
+
+    networks:
+      - backend
+
+
+  TemporalUI:
+    image: temporalio/ui:latest
+
+    container_name: TemporalUI
+
+    depends_on:
+      - temporal
+
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+
+    ports:
+      - "8080:8080"
+
+    networks:
+      - insertion-remote
+
+
+  MasterWorker:
+    build:
+      context: .
+      dockerfile: orchestration/master/Dockerfile
+
+    container_name: MasterWorker
+
+    depends_on:
+      - temporal
+      - llm
+
+    networks:
+      - insertion-remote
+
+
   Initializer:
     build:
       context: .
       dockerfile: apps/initializer/Dockerfile
+
+      container_name: Initializer
 
     env_file:
       - apps/initializer/.env
@@ -45,8 +124,10 @@ services:
       - insertion-remote
 
 
-  postgres:
+  Postgres:
     image: postgres:17
+
+    container_name: Postgres
 
     environment:
       POSTGRES_DB: insertion
@@ -70,8 +151,10 @@ services:
       - insertion-remote
 
 
-  redis:
+  Redis:
     image: redis:8
+
+    container_name: Redis
 
     networks:
       - insertion-remote
@@ -81,6 +164,8 @@ services:
 volumes:
 
   postgres_data:
+
+  temporal_postgres_data:
 
 
 
